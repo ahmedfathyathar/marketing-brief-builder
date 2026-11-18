@@ -46,7 +46,7 @@ export function Welcome({ outputs, hasProgress, onToggle, onStart, onContinue, o
           Marketing Brief Builder
         </span>
         <h1 className="max-w-3xl text-balance text-[2rem] font-bold leading-[1.35] text-ink sm:text-[2.6rem]">
-          حوّل معلومات البزنس بتاعك إلى خطة تسويقية <span className="text-primary">ومحتوى يبيع.</span>
+          حوّل معلومات البزنس بتاعك إلى اسم ولوجو <span className="text-primary">ومحتوى يبيع.</span>
         </h1>
         <p className="max-w-2xl text-[17px] leading-8 text-muted">
           اختار إنت عايز تطلّع إيه، وجاوب على الأسئلة اللي تخصه بس. في الآخر هتاخد Prompts جاهزة تستخدمها مع Claude أو ChatGPT أو Gemini.

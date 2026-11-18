@@ -71,7 +71,7 @@ export const SECTIONS: Section[] = [
     title: "معلومات عن الجمهور المستهدف",
     shortTitle: "الجمهور",
     description: "مين اللي بيشتري منك، وبيفكر إزاي، وإيه اللي مقلقه.",
-    why: "الـ Target Audience هو أهم جزء في أي خطة. نفس المنتج بيتباع بكلام مختلف تمامًا لطالب جامعة ولمدير شركة.",
+    why: "الـ Target Audience هو أهم جزء في أي Brief. نفس المنتج بيتباع بكلام مختلف تمامًا لطالب جامعة ولمدير شركة.",
     fields: [
       {
         id: "targetAudience", num: 0, for: ["name", "logo", "landing", "copy"], label: "مين الجمهور المستهدف؟", type: "textarea", required: true,
