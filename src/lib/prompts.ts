@@ -1,6 +1,6 @@
-import { Answers, SECTIONS, isFilled, FIELD_BY_ID, answerText } from "../data/questions";
+import { Answers, SECTIONS, isFilled, FIELD_BY_ID, answerText, OutputKind } from "../data/questions";
 
-export type PromptKind = "strategy" | "landing" | "copy";
+export type PromptKind = OutputKind;
 export type OutputLang = "ar-eg" | "ar" | "en";
 
 export interface PromptOptions {
@@ -16,6 +16,7 @@ export const LANG_LABELS: Record<OutputLang, string> = {
 /** Short, prompt-friendly label for each field. */
 const PROMPT_LABEL: Record<string, string> = {
   brandName: "اسم البراند (Brand Name)",
+  industry: "المجال (Industry)",
   productName: "المنتج / الخدمة",
   productDescription: "وصف المنتج والمواصفات",
   keyFeatures: "المميزات الأساسية",
@@ -41,6 +42,17 @@ const PROMPT_LABEL: Record<string, string> = {
   cta: "الإجراء المطلوب من العميل (CTA)",
   platforms: "منصات النشر",
   contactMethod: "طريقة التواصل / الطلب",
+  nameLanguage: "لغة الاسم",
+  customerLanguage: "لغة الجمهور",
+  nameType: "نوع الاسم",
+  positioning: "Positioning",
+  namePersonality: "شخصية البراند",
+  nameLength: "طول الاسم",
+  nameStructure: "عدد الكلمات",
+  nameIncludeAvoid: "حروف أو كلمات يحطها أو يتجنبها",
+  brandPersonality: "Brand Personality",
+  brandColors: "الألوان المفضلة",
+  brandMessage: "Brand Message",
 };
 
 const MISSING = "⟨غير متوفر — لم يتم تقديم هذه المعلومة⟩";
@@ -55,8 +67,8 @@ function formatValue(raw: string): string {
 }
 
 /** The full brief, grouped by section, with explicit markers for missing fields. */
-export function renderBrief(answers: Answers): string {
-  return SECTIONS.map((s) => {
+export function renderBrief(answers: Answers, kind: PromptKind): string {
+  return SECTIONS.map((s) => ({ ...s, fields: s.fields.filter((f) => f.for.includes(kind)) })).filter((s) => s.fields.length).map((s) => {
     const lines = s.fields.map((f) => {
       const raw = valueOf(answers, f.id);
       return `- ${PROMPT_LABEL[f.id] ?? f.label}: ${raw ? formatValue(raw) : MISSING}`;
@@ -65,20 +77,11 @@ export function renderBrief(answers: Answers): string {
   }).join("\n\n");
 }
 
-/** Fields each prompt depends on most. Missing ones get called out explicitly. */
-const CRITICAL: Record<PromptKind, string[]> = {
-  strategy: ["ageRange", "location", "purchasingPower", "audienceNeeds", "objections", "currentAlternatives", "directCompetitors", "differentiation", "offers", "paymentPlans", "guarantee", "mustHaveFeatures"],
-  landing: ["brandLanguage", "howToUse", "objections", "differentiation", "offers", "paymentPlans", "guarantee", "mustHaveFeatures", "audienceNeeds"],
-  copy: ["brandLanguage", "objections", "audienceNeeds", "differentiation", "offers", "guarantee", "ageRange", "currentAlternatives", "mustHaveFeatures"],
-};
-
+/** Questions this prompt uses that were left empty. */
 export function missingFields(kind: PromptKind, answers: Answers): string[] {
-  const all = SECTIONS.flatMap((s) => s.fields.map((f) => f.id));
-  const crit = CRITICAL[kind];
-  return all
-    .filter((id) => !isFilled(answers[id]))
-    .sort((a, b) => Number(crit.includes(b)) - Number(crit.includes(a)))
-    .map((id) => PROMPT_LABEL[id] ?? FIELD_BY_ID[id]?.label ?? id);
+  return SECTIONS.flatMap((s) => s.fields)
+    .filter((f) => f.for.includes(kind) && !isFilled(answers[f.id]))
+    .map((f) => PROMPT_LABEL[f.id] ?? FIELD_BY_ID[f.id]?.label ?? f.id);
 }
 
 function missingBlock(kind: PromptKind, answers: Answers): string {
@@ -134,67 +137,7 @@ function product(answers: Answers): string {
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━";
 
-/* ───────────────────────── Prompt A: Strategy ───────────────────────── */
-
-function strategyPrompt(a: Answers, o: PromptOptions): string {
-  const goals = valueOf(a, "goals") || "غير محدد";
-  const platforms = valueOf(a, "platforms") || "غير محدد";
-  return `# الدور
-إنت Senior Marketing Strategist و Growth Consultant، عندك خبرة عميقة في Market Research، Positioning، Customer Psychology، Competitive Analysis، Marketing Funnels، و Performance Marketing. شغلك إنك تحوّل المعلومات الخام لاستراتيجية واضحة وخطة تنفيذ عملية، مش لكلام نظري.
-
-# المهمة
-حلّل الـ Marketing Brief الخاص بـ «${brand(a)}» (المنتج: ${product(a)}) وابني استراتيجية تسويقية متكاملة وخطة تنفيذ لمدة 30 يوم.
-الأهداف المعلنة: ${goals}.
-القنوات اللي صاحب البزنس ناوي يستخدمها: ${platforms}.
-
-${DIVIDER}
-# الـ Marketing Brief
-${renderBrief(a)}
-${DIVIDER}
-
-# المعلومات الناقصة
-${missingBlock("strategy", a)}
-
-# قواعد أساسية
-- لا تخترع إحصائيات سوق، أو أرقام، أو معلومات عن منافسين، أو نتائج أبحاث عملاء.
-- فرّق بوضوح في كل قسم بين ٣ أنواع من الكلام، وعلّم كل نقطة بنوعها:
-  [حقيقة من الـ Brief] — معلومة قالها صاحب البزنس.
-  [افتراض استراتيجي] — استنتاج منطقي منك محتاج يتأكد.
-  [توصية بحث] — حاجة لازم تتبحث أو تتقاس قبل الاعتماد عليها.
-- الخطة لازم تكون واقعية ومناسبة لحجم البزنس ومعلوماته الفعلية. لو الميزانية أو حجم الفريق مش معروفين، اقترح نسخة بسيطة قابلة للتنفيذ وقول إيه اللي يتغير لو الموارد أكبر.
-- رتّب كل التوصيات حسب الأولوية والأثر المتوقع.
-- خلّي كل توصية مربوطة بمعلومة من الـ Brief، ووضّح الربط ده.
-
-# المطلوب (بالترتيب ده بالظبط)
-1. **Business & Product Analysis** — نقاط القوة والضعف في المنتج والعرض الحالي من واقع الـ Brief.
-2. **Target Audience Analysis** — مين بالظبط، وإيه السياق اللي بيشتري فيه.
-3. **Customer Pain Points & Purchase Motivations** — الألم، الرغبة، والدوافع العقلانية والعاطفية للشراء.
-4. **Customer Personas** — من 2 لـ 3 شخصيات: الاسم، الخلفية، يوم عادي في حياته، المشكلة، الاعتراض الأساسي، الرسالة اللي تقنعه، والقناة الأنسب للوصول له.
-5. **Competitor & Alternative Analysis** — حلّل البدائل والمنافسين المذكورين فقط. لو المعلومات قليلة، اعمل جدول بالمعلومات اللي محتاج صاحب البزنس يجمعها عن كل منافس وإزاي يجمعها.
-6. **Unique Selling Proposition (USP)** — جملة واحدة واضحة، ومعاها 2 بديل.
-7. **Brand Positioning** — Positioning Statement بالصيغة: لـ [الجمهور] اللي [الاحتياج]، ${brand(a)} هو [الفئة] اللي [الفايدة الأساسية]، على عكس [البديل] لأن [السبب].
-8. **Value Proposition** — الفايدة الوظيفية، والعاطفية، والاقتصادية.
-9. **Messaging & Communication Angles** — Key Message أساسية، و 5 زوايا تواصل مختلفة، مع إمتى تستخدم كل زاوية.
-10. **Marketing Funnel** — TOFU / MOFU / BOFU: الهدف، نوع المحتوى، القناة، والـ CTA في كل مرحلة، ومربوطة بالـ CTA النهائي: «${valueOf(a, "cta") || "غير محدد"}».
-11. **Recommended Marketing Channels** — قيّم القنوات المختارة، واقترح ترتيب أولوية، ووضّح لو فيه قناة مش مناسبة وليه.
-12. **Content Strategy & Content Pillars** — من 3 لـ 5 Pillars، ولكل واحد أمثلة لـ 3 أفكار محتوى.
-13. **Marketing Campaign Ideas** — 3 أفكار حملات: الاسم، الفكرة، الرسالة، القناة، والعرض المستخدم (من العروض المذكورة فقط).
-14. **Detailed 30-Day Marketing Action Plan** — جدول مقسّم على 4 أسابيع. لكل أسبوع: الهدف، المهام بالترتيب، القناة، المخرجات المطلوبة، ومين ينفذ (لو معروف). الأسبوع الأول يركز على التأسيس والقياس.
-15. **KPIs & Performance Metrics** — مؤشرات لكل مرحلة في الـ Funnel، وإزاي تتقاس، ومن غير ما تحط أرقام مستهدفة مخترعة. لو اقترحت Benchmark وضّح إنه [افتراض] محتاج يتأكد من نتايج أول أسبوعين.
-
-# شكل الرد
-- عناوين واضحة مرقّمة زي القائمة فوق.
-- استخدم جداول للـ Personas، وتحليل المنافسين، والـ Funnel، وخطة الـ 30 يوم.
-- في الآخر: «أهم 5 خطوات تبدأ بيها النهارده» بالترتيب.
-
-# لغة البراند (للنصوص الجاهزة للنشر)
-${brandLangRule(a)}
-
-# لغة الرد (للشرح والتحليل)
-${langRule(o.lang)}`;
-}
-
-/* ───────────────────────── Prompt B: Landing Page ───────────────────────── */
+/* ───────────────────────── Landing Page ───────────────────────── */
 
 function landingPrompt(a: Answers, o: PromptOptions): string {
   const hasSocialProof = false; // the brief has no testimonials field; the prompt must not fabricate any
@@ -209,7 +152,7 @@ function landingPrompt(a: Answers, o: PromptOptions): string {
 
 ${DIVIDER}
 # الـ Marketing Brief
-${renderBrief(a)}
+${renderBrief(a, "landing")}
 ${DIVIDER}
 
 # المعلومات الناقصة
@@ -251,7 +194,7 @@ ${brandLangRule(a)}
 ${langRule(o.lang)}`;
 }
 
-/* ───────────────────────── Prompt C: Sales Copy ───────────────────────── */
+/* ───────────────────────── Sales Copy ───────────────────────── */
 
 function copyPrompt(a: Answers, o: PromptOptions): string {
   const platforms = Array.isArray(a.platforms) ? valueOf(a, "platforms") : "";
@@ -269,7 +212,7 @@ function copyPrompt(a: Answers, o: PromptOptions): string {
 
 ${DIVIDER}
 # الـ Marketing Brief
-${renderBrief(a)}
+${renderBrief(a, "copy")}
 ${DIVIDER}
 
 # المعلومات الناقصة
@@ -305,16 +248,175 @@ ${brandLangRule(a)}
 ${langRule(o.lang)}`;
 }
 
+/* ───────────────────────── Brand Name ───────────────────────── */
+
+const ARABIC_NOTE = "Note: some of the answers below are written in Arabic (Egyptian dialect). Read them carefully and interpret them faithfully. Do not add facts that are not in the answers.";
+
+function nameLangRule(lang: OutputLang): string {
+  switch (lang) {
+    case "ar-eg":
+      return "Write all explanations (meanings, reasons, personality) in clear Egyptian Arabic. Write every brand name in Latin letters and in Arabic script, so the business owner can see how it reads in both.";
+    case "ar":
+      return "Write all explanations (meanings, reasons, personality) in simple Modern Standard Arabic. Write every brand name in Latin letters and in Arabic script.";
+    case "en":
+      return "Write the entire response in clear, professional English. Also show every brand name in Arabic script.";
+  }
+}
+
+function v(a: Answers, id: string, fallback = "[NOT PROVIDED]"): string {
+  return valueOf(a, id) || fallback;
+}
+
+function namePrompt(a: Answers, o: PromptOptions): string {
+  return `PROFESSIONAL BRAND NAME GENERATOR
+Act as a world-class brand naming strategist, creative director, and branding expert.
+Your task is to create unique, memorable, easy-to-understand, and marketable brand names that have the potential to become globally recognizable brands.
+
+IMPORTANT: The business owner has already answered all the discovery questions below. Do not ask them again. Use these answers and go straight to generating the names.
+${ARABIC_NOTE}
+
+STEP 1: UNDERSTAND THE BUSINESS
+1. Industry: ${v(a, "industry")}
+2. Products or services: ${v(a, "productName")}. ${v(a, "productDescription", "")}
+3. Target customer: ${v(a, "targetAudience")}
+
+STEP 2: UNDERSTAND THE LANGUAGE
+4. Language the brand name should be based on: ${v(a, "nameLanguage")}
+5. Language the target customers primarily speak and understand: ${v(a, "customerLanguage")}
+6. Type of name: ${v(a, "nameType")}
+IMPORTANT: The name must be easy to pronounce, spell, read, and remember for the target audience.
+
+STEP 3: UNDERSTAND BRAND POSITIONING
+7. Positioning: ${v(a, "positioning")}
+8. Brand personality: ${v(a, "namePersonality")}
+
+STEP 4: NAMING PREFERENCES
+9. Preferred name length: ${v(a, "nameLength")}
+10. Preferred naming structure: ${v(a, "nameStructure")}
+11. Letters, sounds, words, or names to include or avoid: ${v(a, "nameIncludeAvoid")}
+12. Competitors or existing brand names to avoid: ${v(a, "directCompetitors")}
+
+STEP 5: GENERATE BRAND NAMES
+Generate 30 brand name suggestions.
+Follow these rules:
+- Prioritize one-word brand names.
+- Aim for 5–7 letters.
+- Make names easy to pronounce and spell.
+- Ensure names are understandable and appropriate for the target language.
+- Make names relevant to the business without being too obvious or generic.
+- Avoid complicated spelling, random letters, and difficult pronunciation.
+- Avoid names that sound too similar to famous existing brands.
+- Prioritize originality, memorability, and long-term brand potential.
+- Ensure the names fit the desired positioning: premium, mass-market, or mid-range.
+- Make the names suitable for logos, websites, packaging, social media, and future business expansion.
+
+STEP 6: PRESENT THE RESULTS
+Organize the 30 names into three categories:
+CATEGORY A – SIMPLE & MEMORABLE: 10 easy-to-understand names with strong brand potential.
+CATEGORY B – MODERN & UNIQUE: 10 creative, distinctive names that sound like modern international brands.
+CATEGORY C – PREMIUM & TIMELESS: 10 sophisticated names suitable for building a strong, long-term brand.
+For every name, provide:
+1. Brand name.
+2. Number of letters.
+3. Pronunciation.
+4. Meaning or naming inspiration.
+5. Why it fits the business.
+6. Its overall brand personality.
+
+STEP 7: FINAL SHORTLIST
+Select the TOP 5 strongest names based on:
+- Memorability.
+- Ease of pronunciation.
+- Relevance to the industry.
+- Appeal to the target customer.
+- Brand positioning.
+- Visual potential for logo design.
+- Potential for long-term brand growth.
+Rank the five names and explain why each one is a strong choice.
+
+IMPORTANT FINAL INSTRUCTIONS
+Do not sacrifice clarity for creativity.
+Do not generate meaningless combinations of letters just to make a name look unique.
+A great brand name should be easy to say, easy to remember, visually attractive, and suitable for the customers who will use it.
+Treat every naming project as if you are naming the next internationally recognized brand.
+Finally, clearly state that domain availability, social media handles, trademarks, and business-name registrations must be checked independently before selecting a final name.
+
+RESPONSE LANGUAGE
+${nameLangRule(o.lang)}`;
+}
+
+/* ───────────────────────── Logo ───────────────────────── */
+
+function logoColors(a: Answers): string {
+  const c = valueOf(a, "brandColors");
+  if (!c || /حرية|creative|freedom|مش فارق/i.test(c)) return "CREATIVE FREEDOM";
+  return c;
+}
+
+function logoPrompt(a: Answers): string {
+  const name = valueOf(a, "brandName");
+  return `PROFESSIONAL LOGO DESIGN PROMPT
+Act as a world-class brand identity designer specializing in iconic, minimalist, and timeless logos.
+
+Create a unique, professional logo for the following business:
+BUSINESS INFORMATION
+- Business Name: ${name || "[INSERT BUSINESS NAME]"}
+- Industry / Sector: ${v(a, "industry")}
+- Products or Services: ${v(a, "productName")}. ${v(a, "productDescription", "")}
+- Target Audience: ${v(a, "targetAudience")}
+- Brand Personality: ${v(a, "brandPersonality")}
+- Preferred Colors: ${logoColors(a)}
+- Brand Message: ${v(a, "brandMessage")}
+${ARABIC_NOTE} Keep the business name spelled exactly as written above.
+DESIGN DIRECTION
+Create a logo inspired by the design principles of iconic global brands such as Adidas, Netflix, and Spotify.
+
+The logo must be:
+1. Simple: Minimalist, clean, and free from unnecessary details.
+2. Memorable: Instantly recognizable and easy to remember.
+3. Unique: Original visual identity that does not imitate existing brands.
+4. Versatile: Works perfectly on websites, social media, packaging, merchandise, business cards, and advertisements.
+5. Timeless: Avoid temporary design trends. Create something that remains relevant for years.
+6. Scalable: Looks equally good as a tiny app icon and a large billboard.
+7. Professional: Reflects the business's industry, personality, and target audience.
+CREATIVE APPROACH
+- Explore a distinctive symbol, geometric shape, abstract mark, or clever visual concept.
+- Consider incorporating the business initials or a hidden visual meaning into the symbol.
+- Use clean typography with carefully balanced spacing and proportions.
+- Create a strong visual relationship between the icon and business name.
+- Use a maximum of 2–3 colors.
+- Ensure the logo remains recognizable in black and white.
+- Avoid generic stock icons, excessive gradients, complicated illustrations, unnecessary shadows, and decorative elements.
+FINAL OUTPUT
+Generate a distinctive logo featuring:
+- A unique brand symbol.
+- A clean, custom-looking wordmark.
+- A balanced combination of symbol and typography.
+- A professional color palette.
+- A flat, vector-style appearance.
+Present the logo on a clean, plain background.
+
+IMPORTANT: Do not create a copy of Adidas, Netflix, Spotify, or any existing brand. Take inspiration only from their simplicity, memorability, and strong visual identity.
+
+The final result should feel like a globally recognizable brand: simple enough to understand in one second, distinctive enough to remember, and versatile enough to build an entire business identity around.`;
+}
+
 export const PROMPT_META: Record<PromptKind, { title: string; role: string }> = {
-  strategy: { title: "Marketing Strategy & Action Plan", role: "Senior Marketing Strategist & Growth Consultant" },
+  name: { title: "Brand Name Prompt", role: "Brand Naming Strategist & Creative Director" },
+  logo: { title: "Logo Design Prompt", role: "Brand Identity Designer" },
   landing: { title: "Landing Page Prompt", role: "CRO Specialist, UX/UI Designer & Direct Response Copywriter" },
   copy: { title: "Sales Copywriting Prompt", role: "Direct Response Copywriter & Consumer Psychology Specialist" },
 };
 
+/** Logo prompts go to image tools and stay in English; the others can switch the AI's reply language. */
+export const HAS_LANG_OPTION: Record<PromptKind, boolean> = { name: true, logo: false, landing: true, copy: true };
+
 export function buildPrompt(kind: PromptKind, answers: Answers, options: PromptOptions): string {
   switch (kind) {
-    case "strategy":
-      return strategyPrompt(answers, options);
+    case "name":
+      return namePrompt(answers, options);
+    case "logo":
+      return logoPrompt(answers);
     case "landing":
       return landingPrompt(answers, options);
     case "copy":

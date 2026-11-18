@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, RotateCcw, CheckCircle2, AlertCircle, X } from "lucide-react";
-import { SECTIONS, SAMPLE_ANSWERS, isFilled } from "./data/questions";
-import { AppState, loadState, saveState, clearState, INITIAL_STATE } from "./lib/storage";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FileText, RotateCcw, CheckCircle2, AlertCircle, X, Save, CloudOff } from "lucide-react";
+import { isFilled, OutputKind, OUTPUT_ORDER, visibleSections, sectionErrors } from "./data/questions";
+import { AppState, loadState, saveState, clearState, INITIAL_STATE, demoState } from "./lib/storage";
 import { Welcome } from "./components/Welcome";
-import { BriefForm, REVIEW_STEP } from "./components/BriefForm";
+import { BriefForm } from "./components/BriefForm";
 import { Review } from "./components/Review";
 import { Dashboard } from "./components/Dashboard";
 import { PromptPanel } from "./components/PromptPanel";
-import type { PromptKind } from "./lib/prompts";
 
 interface Toast { id: number; msg: string; tone: "success" | "error" }
 
@@ -15,9 +14,14 @@ export default function App() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [toast, setToast] = useState<Toast | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [saveOk, setSaveOk] = useState(true);
   const toastTimer = useRef<number>();
 
-  useEffect(() => saveState(state), [state]);
+  // Every change is written to this browser right away, so a refresh keeps typed answers and the current step.
+  useEffect(() => setSaveOk(saveState(state)), [state]);
+
+  const sections = useMemo(() => visibleSections(state.outputs), [state.outputs]);
+  const reviewStep = sections.length;
 
   const update = useCallback((patch: Partial<AppState>) => setState((s) => ({ ...s, ...patch })), []);
 
@@ -28,41 +32,73 @@ export default function App() {
   }, []);
 
   const setAnswer = (id: string, value: string | string[]) =>
-    setState((s) => ({ ...s, answers: { ...s.answers, [id]: value } }));
+    setState((s) => ({ ...s, answers: { ...s.answers, [id]: value }, savedAt: Date.now() }));
+
+  const top = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const gotoStep = (step: number) => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    top();
     update({ stage: "form", step });
   };
 
-  const hasProgress = Object.values(state.answers).some((v) => isFilled(v as string | string[]));
+  const hasProgress = Object.values(state.answers).some((v) => isFilled(v as string | string[])) && !state.isDemo;
+
+  /** First step (for these outputs) that still has an unanswered required question, or the review. */
+  const firstIncomplete = (outputs: OutputKind[], answers = state.answers) => {
+    const secs = visibleSections(outputs);
+    const i = secs.findIndex((s) => sectionErrors(s, answers).length > 0);
+    return { secs, i };
+  };
+
+  const toggleOutput = (k: OutputKind) =>
+    setState((s) => {
+      const outputs = s.outputs.includes(k) ? s.outputs.filter((x) => x !== k) : OUTPUT_ORDER.filter((x) => x === k || s.outputs.includes(x));
+      const len = visibleSections(outputs).length;
+      return { ...s, outputs, step: Math.min(s.step, Math.max(len - 1, 0)), maxStep: Math.min(s.maxStep, len) };
+    });
 
   const go = {
-    start: () => update({ stage: "form", step: 0 }),
+    start: () => { top(); update({ stage: "form", step: 0, isDemo: false }); },
     continue: () => {
-      if (state.maxStep >= REVIEW_STEP) update({ stage: "review" });
-      else update({ stage: "form", step: state.step });
+      const { secs, i } = firstIncomplete(state.outputs);
+      top();
+      if (i === -1) update({ stage: "review", maxStep: secs.length });
+      else update({ stage: "form", step: Math.min(state.step, i), maxStep: Math.max(state.maxStep, i) });
     },
     sample: () => {
-      setState((s) => ({ ...s, answers: { ...SAMPLE_ANSWERS }, stage: "dashboard", maxStep: REVIEW_STEP, step: 0, isDemo: true }));
+      setState(demoState());
       showToast("اتملى الـ Brief بمثال تجريبي (ركوة). عدّل أي حاجة براحتك.");
     },
     next: () => {
       const nextStep = state.step + 1;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      if (nextStep >= SECTIONS.length) update({ stage: "review", maxStep: REVIEW_STEP });
+      top();
+      if (nextStep >= sections.length) update({ stage: "review", maxStep: reviewStep });
       else update({ step: nextStep, maxStep: Math.max(state.maxStep, nextStep) });
     },
     back: () => {
       if (state.step === 0) update({ stage: "welcome" });
       else gotoStep(state.step - 1);
     },
-    review: () => { window.scrollTo({ top: 0 }); update({ stage: "review" }); },
-    generate: () => { window.scrollTo({ top: 0 }); update({ stage: "dashboard" }); },
-    openPrompt: (k: PromptKind) =>
-      setState((s) => ({ ...s, stage: "prompt", activePrompt: k, generated: { ...s.generated, [k]: true } })),
-    dashboard: () => { window.scrollTo({ top: 0 }); update({ stage: "dashboard" }); },
-    editBrief: () => { window.scrollTo({ top: 0 }); update({ stage: "review" }); },
+    review: () => { top(); update({ stage: "review" }); },
+    generate: () => { top(); update({ stage: "dashboard" }); },
+    openPrompt: (k: OutputKind) => {
+      top();
+      setState((s) => ({ ...s, stage: "prompt", activePrompt: k, generated: { ...s.generated, [k]: true } }));
+    },
+    addOutput: (k: OutputKind) => {
+      const outputs = OUTPUT_ORDER.filter((x) => x === k || state.outputs.includes(x));
+      const { secs, i } = firstIncomplete(outputs);
+      top();
+      if (i === -1) {
+        update({ outputs, maxStep: secs.length });
+        showToast("اتضاف. كل الأسئلة اللي محتاجها متجاوبة.");
+      } else {
+        update({ outputs, stage: "form", step: i, maxStep: i });
+        showToast("جاوب على الأسئلة الجديدة وارجع للـ Dashboard.");
+      }
+    },
+    dashboard: () => { top(); update({ stage: "dashboard" }); },
+    editBrief: () => { top(); update({ stage: "review" }); },
     home: () => update({ stage: "welcome" }),
   };
 
@@ -73,18 +109,31 @@ export default function App() {
     showToast("اتمسحت كل الإجابات. تقدر تبدأ من الأول.");
   };
 
+  const showSaved = state.stage === "form" || state.stage === "review";
+
   return (
     <div className="min-h-full bg-canvas">
       <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 border-b border-line bg-white/90 backdrop-blur">
         <div className="gutter mx-auto flex h-16 max-w-6xl items-center justify-between gap-3">
-          <button onClick={go.home} className="flex items-center gap-2.5" aria-label="الصفحة الرئيسية">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+          <button onClick={go.home} className="flex min-w-0 items-center gap-2.5" aria-label="الصفحة الرئيسية">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
               <FileText className="h-5 w-5" />
             </span>
-            <span dir="ltr" className="text-[15px] font-bold text-ink">Marketing Brief Builder</span>
+            <span dir="ltr" className="truncate text-[15px] font-bold text-ink">Marketing Brief Builder</span>
           </button>
           <div className="flex items-center gap-2">
-            {hasProgress && (
+            {showSaved && (
+              saveOk ? (
+                <span className="hidden items-center gap-1.5 text-[12px] text-muted sm:inline-flex" aria-live="polite">
+                  <Save className="h-4 w-4 text-success" /> إجاباتك متحفظة
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-red-600" role="status">
+                  <CloudOff className="h-4 w-4" /> المتصفح مانع الحفظ
+                </span>
+              )
+            )}
+            {(hasProgress || state.isDemo) && (
               confirmReset ? (
                 <div className="animate-in flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 py-1 pe-1 ps-3 text-[13px]">
                   <span className="hidden font-medium text-red-700 sm:inline">امسح كل الإجابات؟</span>
@@ -103,10 +152,18 @@ export default function App() {
 
       <main className="gutter mx-auto max-w-6xl pb-24">
         {state.stage === "welcome" && (
-          <Welcome hasProgress={hasProgress} onStart={go.start} onContinue={go.continue} onSample={go.sample} />
+          <Welcome
+            outputs={state.outputs}
+            hasProgress={hasProgress}
+            onToggle={toggleOutput}
+            onStart={go.start}
+            onContinue={go.continue}
+            onSample={go.sample}
+          />
         )}
-        {state.stage === "form" && (
+        {state.stage === "form" && sections.length > 0 && (
           <BriefForm
+            sections={sections}
             step={state.step}
             maxStep={state.maxStep}
             answers={state.answers}
@@ -118,10 +175,18 @@ export default function App() {
           />
         )}
         {state.stage === "review" && (
-          <Review answers={state.answers} maxStep={state.maxStep} onEdit={gotoStep} onBack={() => gotoStep(SECTIONS.length - 1)} onGenerate={go.generate} />
+          <Review sections={sections} answers={state.answers} maxStep={state.maxStep} onEdit={gotoStep} onBack={() => gotoStep(sections.length - 1)} onGenerate={go.generate} />
         )}
         {state.stage === "dashboard" && (
-          <Dashboard answers={state.answers} generated={state.generated} onOpen={go.openPrompt} onEditBrief={go.editBrief} isDemo={state.isDemo} />
+          <Dashboard
+            answers={state.answers}
+            outputs={state.outputs}
+            generated={state.generated}
+            onOpen={go.openPrompt}
+            onAdd={go.addOutput}
+            onEditBrief={go.editBrief}
+            isDemo={state.isDemo}
+          />
         )}
         {state.stage === "prompt" && state.activePrompt && (
           <PromptPanel
@@ -131,6 +196,7 @@ export default function App() {
             onLang={(lang) => update({ lang })}
             onBack={go.dashboard}
             onToast={showToast}
+            onAnswer={setAnswer}
           />
         )}
       </main>

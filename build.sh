@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 npx tsc -p .
 mkdir -p dist
-npx esbuild src/main.tsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV='"production"' --outfile=dist/app.js
+npx esbuild src/main.tsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV='"production"' --define:__DEMO_DEFAULT__=${DEMO_DEFAULT:-false} --outfile=dist/app.js
 npx tailwindcss -i src/index.css -o dist/app.css --minify
 node -e '
 const fs=require("fs");

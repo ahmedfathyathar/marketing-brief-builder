@@ -1,10 +1,12 @@
-import { Answers, SAMPLE_ANSWERS, SECTIONS } from "../data/questions";
+import { Answers, SAMPLE_ANSWERS, OutputKind, OUTPUT_ORDER, visibleSections } from "../data/questions";
 import type { OutputLang, PromptKind } from "./prompts";
 
 export type Stage = "welcome" | "form" | "review" | "dashboard" | "prompt";
 
 export interface AppState {
   stage: Stage;
+  /** what the person wants to generate; decides which questions are asked */
+  outputs: OutputKind[];
   step: number;
   maxStep: number;
   answers: Answers;
@@ -12,35 +14,45 @@ export interface AppState {
   activePrompt: PromptKind | null;
   generated: Partial<Record<PromptKind, boolean>>;
   isDemo?: boolean;
+  savedAt?: number;
 }
 
-const KEY = "marketing-brief-builder:v3";
+const KEY = "marketing-brief-builder:v5";
+
+/** Set at build time: the preview build opens on the filled demo, the public build opens on the picker. */
+declare const __DEMO_DEFAULT__: boolean;
+const DEMO_DEFAULT = typeof __DEMO_DEFAULT__ !== "undefined" && __DEMO_DEFAULT__;
 
 export const INITIAL_STATE: AppState = {
-  stage: "welcome", step: 0, maxStep: 0, answers: {}, lang: "ar-eg", activePrompt: null, generated: {},
+  stage: "welcome", outputs: [], step: 0, maxStep: 0, answers: {}, lang: "ar-eg", activePrompt: null, generated: {},
 };
 
-/** First visit opens on the dashboard with the hypothetical "ركوة" brief already filled in. */
-export const DEMO_STATE: AppState = {
-  ...INITIAL_STATE, stage: "dashboard", maxStep: SECTIONS.length, answers: { ...SAMPLE_ANSWERS }, isDemo: true,
-};
+/** The hypothetical "ركوة" brief with every output selected and every question answered. */
+export function demoState(): AppState {
+  const outputs = [...OUTPUT_ORDER];
+  return {
+    ...INITIAL_STATE, stage: "dashboard", outputs, maxStep: visibleSections(outputs).length, answers: { ...SAMPLE_ANSWERS }, isDemo: true,
+  };
+}
 
 export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return DEMO_STATE;
+    if (!raw) return DEMO_DEFAULT ? demoState() : INITIAL_STATE;
     const parsed = JSON.parse(raw) as Partial<AppState>;
-    return { ...INITIAL_STATE, ...parsed, answers: parsed.answers ?? {} };
+    return { ...INITIAL_STATE, ...parsed, answers: parsed.answers ?? {}, outputs: parsed.outputs ?? [] };
   } catch {
-    return DEMO_STATE;
+    return DEMO_DEFAULT ? demoState() : INITIAL_STATE;
   }
 }
 
-export function saveState(state: AppState): void {
+/** Saves on every change, so a refresh never loses typed answers. Returns false if the browser blocks storage. */
+export function saveState(state: AppState): boolean {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
+    return true;
   } catch {
-    /* storage unavailable: the app keeps working in memory */
+    return false;
   }
 }
 

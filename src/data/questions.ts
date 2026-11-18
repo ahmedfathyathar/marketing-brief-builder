@@ -1,4 +1,8 @@
-export type FieldType = "text" | "textarea" | "multiselect" | "chips";
+export type FieldType = "text" | "textarea" | "multiselect" | "chips" | "single";
+
+/** The prompts a person can generate. Each question is tagged with the ones it feeds. */
+export type OutputKind = "name" | "logo" | "landing" | "copy";
+export const OUTPUT_ORDER: OutputKind[] = ["name", "logo", "landing", "copy"];
 
 export interface Field {
   id: string;
@@ -8,6 +12,8 @@ export interface Field {
   placeholder?: string;
   type: FieldType;
   required: boolean;
+  /** which outputs need this question */
+  for: OutputKind[];
   options?: string[];
   /** when this option is selected in a multiselect, show a free-text input */
   otherOption?: string;
@@ -35,23 +41,27 @@ export const SECTIONS: Section[] = [
     description: "خلّينا نبدأ من الأساس: إنت بتبيع إيه، وإيه اللي يخلّي منتجك يستاهل.",
     why: "كل ما الوصف أدق، كل ما الـ AI يقدر يكتب كلام حقيقي عن منتجك بدل كلام عام ينفع لأي حد.",
     fields: [
-      { id: "brandName", num: 0, label: "اسم البزنس (Brand Name)", type: "text", required: true, placeholder: "مثلًا: ركوة" },
-      { id: "productName", num: 0, label: "اسم المنتج أو الخدمة", type: "text", required: true, placeholder: "مثلًا: اشتراك وجبات صحية أسبوعي" },
+      { id: "brandName", num: 0, for: ["logo", "landing", "copy"], label: "اسم البزنس (Brand Name)", type: "text", required: true, placeholder: "مثلًا: ركوة" },
+      { id: "productName", num: 0, for: ["name", "logo", "landing", "copy"], label: "اسم المنتج أو الخدمة", type: "text", required: true, placeholder: "مثلًا: اشتراك وجبات صحية أسبوعي" },
       {
-        id: "productDescription", num: 0, label: "وصف المنتج بالتفصيل، شامل كل المواصفات والخصائص", type: "textarea", required: true, rows: 5,
+        id: "productDescription", num: 0, for: ["name", "logo", "landing", "copy"], label: "وصف المنتج بالتفصيل، شامل كل المواصفات والخصائص", type: "textarea", required: true, rows: 5,
         placeholder: "اكتب كل حاجة: المكونات، الأحجام، المدة، طريقة التسليم، أي مواصفات فنية...",
       },
       {
-        id: "keyFeatures", num: 0, label: "إيه المميزات الأساسية اللي بتميز المنتج عن غيره؟", type: "textarea", required: true,
+        id: "industry", num: 0, for: ["name", "logo"], label: "البزنس في أنهي مجال أو Industry؟", type: "text", required: true,
+        placeholder: "مثلًا: Food & Beverage، Fashion، Technology، Beauty، Education، Real Estate",
+      },
+      {
+        id: "keyFeatures", num: 0, for: ["landing", "copy"], label: "إيه المميزات الأساسية اللي بتميز المنتج عن غيره؟", type: "textarea", required: true,
         placeholder: "مثلًا: كل وجبة محسوبة سعراتها، توصيل يومي قبل ٩ الصبح، منيو بيتغير كل أسبوع",
       },
       {
-        id: "mustHaveFeatures", num: 0, label: "إيه الحاجات الأساسية اللي لو مش موجودة في المنتج، العميل مش هيشتريه؟ (Must-have Features)", type: "textarea", required: true,
+        id: "mustHaveFeatures", num: 0, for: ["landing", "copy"], label: "إيه الحاجات الأساسية اللي لو مش موجودة في المنتج، العميل مش هيشتريه؟ (Must-have Features)", type: "textarea", required: true,
         hint: "دي الحاجات اللي العميل بيعتبرها بديهية. بتساعد الـ AI يعرف يركز على إيه في الرسائل.",
         placeholder: "مثلًا: أكل طازة مش مجمد، أسعار واضحة، إمكانية إيقاف الاشتراك",
       },
       {
-        id: "howToUse", num: 0, label: "إيه طريقة استخدام المنتج؟ وهل محتاج خطوات معينة؟", type: "textarea", required: true,
+        id: "howToUse", num: 0, for: ["landing", "copy"], label: "إيه طريقة استخدام المنتج؟ وهل محتاج خطوات معينة؟", type: "textarea", required: true,
         placeholder: "مثلًا: تختار الباقة ← تحدد هدفك ← الوجبات توصلك كل يوم",
       },
     ],
@@ -64,39 +74,106 @@ export const SECTIONS: Section[] = [
     why: "الـ Target Audience هو أهم جزء في أي خطة. نفس المنتج بيتباع بكلام مختلف تمامًا لطالب جامعة ولمدير شركة.",
     fields: [
       {
-        id: "targetAudience", num: 0, label: "مين الجمهور المستهدف؟", type: "textarea", required: true,
+        id: "targetAudience", num: 0, for: ["name", "logo", "landing", "copy"], label: "مين الجمهور المستهدف؟", type: "textarea", required: true,
         placeholder: "مثلًا: موظفين وموظفات في الشركات، مشغولين طول اليوم، عايزين ياكلوا صحي ومش لاقيين وقت يطبخوا",
       },
       {
-        id: "ageRange", num: 0, label: "الفئة العمرية (Age Range)", type: "chips", required: true,
+        id: "ageRange", num: 0, for: ["landing", "copy"], label: "الفئة العمرية (Age Range)", type: "chips", required: true,
         options: ["أقل من 18", "18–24", "25–34", "35–44", "45–54", "55+"],
         hint: "اختار فئة أو أكتر.",
       },
-      { id: "location", num: 0, label: "المكان الجغرافي (Location)", type: "text", required: true, placeholder: "مثلًا: القاهرة الكبرى (التجمع، المعادي، الشيخ زايد)" },
+      { id: "location", num: 0, for: ["landing", "copy"], label: "المكان الجغرافي (Location)", type: "text", required: true, placeholder: "مثلًا: القاهرة الكبرى (التجمع، المعادي، الشيخ زايد)" },
       {
-        id: "brandLanguage", num: 0, label: "البزنس عايز يكتب للجمهور بأنهي لغة؟", type: "multiselect", required: true,
+        id: "brandLanguage", num: 0, for: ["landing", "copy"], label: "البزنس عايز يكتب للجمهور بأنهي لغة؟", type: "multiselect", required: true,
         options: ["عامية مصرية", "عربي فصحى مبسطة", "English", "عربي وإنجليزي مع بعض", "لغة أو لهجة تانية"],
         otherOption: "لغة أو لهجة تانية",
         otherPlaceholder: "اكتب اللغة أو اللهجة: مثلًا خليجي، شامي، Franco Arabic…",
         hint: "دي اللغة اللي هيتكتب بيها أي كلام موجّه للعميل: الإعلانات، الـ Landing Page، والـ Captions. لو اخترت أكتر من لغة، الـ AI هيعمل نسخة بكل لغة.",
       },
-      { id: "purchasingPower", num: 0, label: "المستوى الاجتماعي أو القوة الشرائية", type: "text", required: true, placeholder: "مثلًا: متوسط إلى فوق المتوسط" },
+      { id: "purchasingPower", num: 0, for: ["landing", "copy"], label: "المستوى الاجتماعي أو القوة الشرائية", type: "text", required: true, placeholder: "مثلًا: متوسط إلى فوق المتوسط" },
       {
-        id: "audienceNeeds", num: 0, label: "إيه أهم احتياجات الجمهور اللي المنتج بيقدر يلبيها؟", type: "textarea", required: true,
+        id: "audienceNeeds", num: 0, for: ["landing", "copy"], label: "إيه أهم احتياجات الجمهور اللي المنتج بيقدر يلبيها؟", type: "textarea", required: true,
         placeholder: "مثلًا: توفير وقت، أكل صحي من غير تفكير، التحكم في الوزن",
       },
       {
-        id: "mainProblem", num: 0, label: "إيه المشكلة الأساسية اللي بيعاني منها وعايز يحلها باستخدام المنتج؟", type: "textarea", required: true,
+        id: "mainProblem", num: 0, for: ["landing", "copy"], label: "إيه المشكلة الأساسية اللي بيعاني منها وعايز يحلها باستخدام المنتج؟", type: "textarea", required: true,
         placeholder: "مثلًا: بيرجع من الشغل متأخر وبيطلب Fast Food، وده بيبوّظ أي دايت بيبدأه",
       },
       {
-        id: "desiredOutcome", num: 0, label: "إيه النتيجة أو الفايدة اللي عايز يوصلها بعد استخدام المنتج؟", type: "textarea", required: true,
+        id: "desiredOutcome", num: 0, for: ["landing", "copy"], label: "إيه النتيجة أو الفايدة اللي عايز يوصلها بعد استخدام المنتج؟", type: "textarea", required: true,
         placeholder: "مثلًا: ينزل في الوزن ويحس بطاقة أعلى من غير ما يضيّع وقت في التخطيط والطبخ",
       },
       {
-        id: "objections", num: 0, label: "إيه أهم مخاوف أو اعتراضات ممكن تخليه يتردد قبل الشراء؟", type: "textarea", required: true,
+        id: "objections", num: 0, for: ["landing", "copy"], label: "إيه أهم مخاوف أو اعتراضات ممكن تخليه يتردد قبل الشراء؟", type: "textarea", required: true,
         hint: "الاعتراضات دي بتتحول لـ FAQs ورسائل بتطمّن العميل.",
         placeholder: "مثلًا: الأكل الصحي طعمه وحش، السعر غالي، خايف يدفع شهر ومايكملش",
+      },
+    ],
+  },
+  {
+    id: "naming",
+    title: "اسم البراند",
+    shortTitle: "الاسم",
+    description: "الأسئلة دي بتحدد شكل الاسم اللي هيطلع: لغته، طوله، وإحساسه.",
+    why: "الاسم الكويس سهل يتقال ويتكتب ويتفتكر عند الجمهور بتاعك بالذات. كل ما تحدد أكتر، كل ما الأسماء تطلع أقرب للي في دماغك.",
+    fields: [
+      {
+        id: "nameLanguage", num: 0, for: ["name"], label: "الاسم يكون مبني على أنهي لغة؟", type: "multiselect", required: true,
+        options: ["English", "عربي", "فرنساوي", "إيطالي", "مزيج من أكتر من لغة", "لغة تانية"],
+        otherOption: "لغة تانية",
+        otherPlaceholder: "اكتب اللغة: مثلًا إسباني، ياباني…",
+      },
+      {
+        id: "customerLanguage", num: 0, for: ["name"], label: "الجمهور بتاعك بيتكلم ويفهم أنهي لغة أساسًا؟", type: "text", required: true,
+        placeholder: "مثلًا: عربي (عامية مصرية) وبيفهم إنجليزي بسيط",
+      },
+      {
+        id: "nameType", num: 0, for: ["name"], label: "عايز الاسم يكون إيه؟", type: "single", required: true,
+        options: ["كلمة حقيقية ليها معنى واضح", "كلمة مبتكرة بس صوتها طبيعي", "دمج كلمات ليها معنى", "مفتوح لكل الاحتمالات"],
+      },
+      {
+        id: "positioning", num: 0, for: ["name"], label: "عايز تقدّم البراند إزاي في السوق؟ (Positioning)", type: "single", required: true,
+        options: ["Premium / Luxury: حصري وراقي وغالي", "Mid-range: احترافي، جودة عالية، وسعره في المتناول", "Mass Market: قريب من الناس، ودود، ومناسب للكل"],
+      },
+      {
+        id: "namePersonality", num: 0, for: ["name"], label: "البراند يحسس الناس بأنهي شخصية؟", type: "single", required: true,
+        options: ["Formal: احترافي، جاد، أنيق، وموثوق", "Casual: ودود، مريح، عصري، وقريب", "Balanced: احترافي بس دافي وقريب"],
+      },
+      {
+        id: "nameLength", num: 0, for: ["name"], label: "طول الاسم المفضل", type: "single", required: true,
+        options: ["5–7 حروف (المثالي)", "4–8 حروف (مقبول)"],
+      },
+      {
+        id: "nameStructure", num: 0, for: ["name"], label: "الاسم يكون كام كلمة؟", type: "single", required: true,
+        options: ["كلمة واحدة (الأفضل)", "كلمتين، بس لو النتيجة أحسن بكتير"],
+      },
+      {
+        id: "nameIncludeAvoid", num: 0, for: ["name"], label: "فيه حروف أو أصوات أو كلمات أو أسماء عايز تحطها أو تتجنبها؟", type: "textarea", required: true, rows: 3,
+        hint: "لو مفيش، اكتب «مفيش».",
+        placeholder: "مثلًا: عايز حرف R يكون في الاسم، ومش عايز أي كلمة فيها Coffee",
+      },
+    ],
+  },
+  {
+    id: "identity",
+    title: "شكل البراند (اللوجو)",
+    shortTitle: "اللوجو",
+    description: "الإحساس والألوان والرسالة اللي اللوجو لازم يوصّلها.",
+    why: "اللوجو الكويس بسيط ويتفهم في ثانية. الإجابات دي بتخلّي الـ AI يصمم حاجة تعبّر عنك بدل لوجو عام ينفع لأي حد.",
+    fields: [
+      {
+        id: "brandPersonality", num: 0, for: ["logo"], label: "شخصية البراند (Brand Personality)", type: "chips", required: true,
+        options: ["Modern", "Bold", "Premium", "Friendly", "Innovative", "Playful", "Trustworthy", "Minimal", "Elegant"],
+        hint: "اختار من 2 لـ 4 صفات.",
+      },
+      {
+        id: "brandColors", num: 0, for: ["logo"], label: "الألوان المفضلة للوجو", type: "text", required: true,
+        hint: "لو مش فارق معاك وعايز المصمم يختار، اكتب «حرية إبداعية».",
+        placeholder: "مثلًا: بني غامق وأوف وايت، أو «حرية إبداعية»",
+      },
+      {
+        id: "brandMessage", num: 0, for: ["logo"], label: "عايز الناس تحس بإيه أو تفتكر إيه لما تشوف البراند؟ (Brand Message)", type: "textarea", required: true, rows: 3,
+        placeholder: "مثلًا: إن القهوة المختصة بقت سهلة وقريبة، ومش حاجة معقدة للمحترفين بس",
       },
     ],
   },
@@ -108,12 +185,12 @@ export const SECTIONS: Section[] = [
     why: "مش لازم تعرف كل المنافسين. اكتب اللي تعرفه، والـ Prompt هيطلب من الـ AI يحدد الناقص بدل ما يخترع معلومات.",
     fields: [
       {
-        id: "currentAlternatives", num: 0, label: "إيه الحلول أو المنتجات اللي الجمهور بيستخدمها حاليًا لحل المشكلة؟", type: "textarea", required: true,
+        id: "currentAlternatives", num: 0, for: ["landing", "copy"], label: "إيه الحلول أو المنتجات اللي الجمهور بيستخدمها حاليًا لحل المشكلة؟", type: "textarea", required: true,
         placeholder: "مثلًا: بيطبخ بنفسه في الويك إند، بيطلب من تطبيقات الدليفري، بيروح لأخصائي تغذية",
       },
-      { id: "directCompetitors", num: 0, label: "مين المنافسين المباشرين؟", type: "textarea", required: true, placeholder: "أسماء براندات أو أنواع بزنس بتقدم نفس الخدمة" },
+      { id: "directCompetitors", num: 0, for: ["name", "landing", "copy"], label: "مين المنافسين المباشرين؟", type: "textarea", required: true, placeholder: "أسماء براندات أو أنواع بزنس بتقدم نفس الخدمة" },
       {
-        id: "differentiation", num: 0, label: "إيه اللي بيميز منتجك عن البدائل والمنافسين؟", type: "textarea", required: true,
+        id: "differentiation", num: 0, for: ["landing", "copy"], label: "إيه اللي بيميز منتجك عن البدائل والمنافسين؟", type: "textarea", required: true,
         placeholder: "مثلًا: الوحيدين اللي بيسمحوا تبدّل الوجبة لحد الساعة ١٠ بالليل",
       },
     ],
@@ -125,10 +202,10 @@ export const SECTIONS: Section[] = [
     description: "تفاصيل السعر والعروض والضمانات اللي بتسهّل قرار الشراء.",
     why: "السعر لوحده مش كفاية. طريقة عرضه، والتقسيط، والضمان بيفرقوا جدًا في الـ Conversion.",
     fields: [
-      { id: "price", num: 0, label: "سعر المنتج أو الخدمة", type: "text", required: true, placeholder: "مثلًا: 1,850 جنيه للأسبوع (٥ أيام × وجبتين)" },
-      { id: "offers", num: 0, label: "هل فيه عروض أو خصومات حاليًا؟", type: "textarea", required: true, rows: 3, placeholder: "مثلًا: خصم 15% على أول اشتراك شهري" },
-      { id: "paymentPlans", num: 0, label: "هل فيه أنظمة دفع أو تقسيط أو باقات مختلفة؟", type: "textarea", required: true, rows: 3, placeholder: "مثلًا: باقة أسبوعية وشهرية، دفع كاش أو InstaPay أو فيزا" },
-      { id: "guarantee", num: 0, label: "هل فيه ضمان أو إمكانية استرجاع؟", type: "textarea", required: true, rows: 3, placeholder: "مثلًا: لو أول وجبة ماعجبتكش بنرجعلك فلوس اليوم ده" },
+      { id: "price", num: 0, for: ["landing", "copy"], label: "سعر المنتج أو الخدمة", type: "text", required: true, placeholder: "مثلًا: 1,850 جنيه للأسبوع (٥ أيام × وجبتين)" },
+      { id: "offers", num: 0, for: ["landing", "copy"], label: "هل فيه عروض أو خصومات حاليًا؟", type: "textarea", required: true, rows: 3, placeholder: "مثلًا: خصم 15% على أول اشتراك شهري" },
+      { id: "paymentPlans", num: 0, for: ["landing", "copy"], label: "هل فيه أنظمة دفع أو تقسيط أو باقات مختلفة؟", type: "textarea", required: true, rows: 3, placeholder: "مثلًا: باقة أسبوعية وشهرية، دفع كاش أو InstaPay أو فيزا" },
+      { id: "guarantee", num: 0, for: ["landing", "copy"], label: "هل فيه ضمان أو إمكانية استرجاع؟", type: "textarea", required: true, rows: 3, placeholder: "مثلًا: لو أول وجبة ماعجبتكش بنرجعلك فلوس اليوم ده" },
     ],
   },
   {
@@ -139,22 +216,22 @@ export const SECTIONS: Section[] = [
     why: "الهدف والمنصة بيحددوا شكل الكلام: إعلان TikTok غير صفحة Landing Page غير بوست Facebook.",
     fields: [
       {
-        id: "goals", num: 0, label: "إيه الهدف الأساسي من المحتوى؟", type: "multiselect", required: true,
+        id: "goals", num: 0, for: ["landing", "copy"], label: "إيه الهدف الأساسي من المحتوى؟", type: "multiselect", required: true,
         options: ["زيادة المبيعات", "جمع Leads", "زيادة الوعي بالبراند", "توجيه الناس لموقع أو متجر", "زيادة الرسائل والاستفسارات"],
         hint: "تقدر تختار أكتر من هدف.",
       },
       {
-        id: "cta", num: 0, label: "إيه الإجراء المطلوب من العميل بعد ما يشوف المحتوى؟ (CTA)", type: "textarea", required: true, rows: 3,
+        id: "cta", num: 0, for: ["landing", "copy"], label: "إيه الإجراء المطلوب من العميل بعد ما يشوف المحتوى؟ (CTA)", type: "textarea", required: true, rows: 3,
         placeholder: "مثلًا: يبعت رسالة على WhatsApp عشان يحجز أول أسبوع",
       },
       {
-        id: "platforms", num: 0, label: "إيه المنصة أو المكان اللي هيتنشر عليه المحتوى؟", type: "multiselect", required: true,
+        id: "platforms", num: 0, for: ["landing", "copy"], label: "إيه المنصة أو المكان اللي هيتنشر عليه المحتوى؟", type: "multiselect", required: true,
         options: ["Website / Landing Page", "Facebook", "Instagram", "TikTok", "Google Ads", "Other"],
         otherOption: "Other",
         otherPlaceholder: "اكتب المنصة: مثلًا Snapchat، LinkedIn، YouTube، محل…",
       },
       {
-        id: "contactMethod", num: 0, label: "كيفية التواصل أو طلب المنتج", type: "textarea", required: true, rows: 3,
+        id: "contactMethod", num: 0, for: ["landing", "copy"], label: "كيفية التواصل أو طلب المنتج", type: "textarea", required: true, rows: 3,
         placeholder: "مثلًا: WhatsApp، Website، Phone، Direct Messages",
       },
     ],
@@ -162,9 +239,25 @@ export const SECTIONS: Section[] = [
 ];
 
 export const ALL_FIELDS: Field[] = SECTIONS.flatMap((s) => s.fields);
-// Question numbers follow the order above, so adding or moving a question renumbers the rest.
-ALL_FIELDS.forEach((f, i) => { f.num = i + 1; });
-export const TOTAL_QUESTIONS = ALL_FIELDS.length;
+
+/** Is this question asked, given the outputs the person picked? The brand name is skipped when they want us to suggest one. */
+export function isAsked(f: Field, outputs: OutputKind[]): boolean {
+  if (f.id === "brandName" && outputs.includes("name")) return false;
+  return f.for.some((k) => outputs.includes(k));
+}
+
+/** Only the sections and questions the chosen outputs need, numbered in order. */
+export function visibleSections(outputs: OutputKind[]): Section[] {
+  let n = 0;
+  return SECTIONS.map((s) => ({
+    ...s,
+    fields: s.fields.filter((f) => isAsked(f, outputs)).map((f) => ({ ...f, num: ++n })),
+  })).filter((s) => s.fields.length > 0);
+}
+
+export function countQuestions(outputs: OutputKind[]): number {
+  return ALL_FIELDS.filter((f) => isAsked(f, outputs)).length;
+}
 
 /** Display value of a field, replacing the "other" option with what the user typed. */
 export function answerText(answers: Answers, id: string, sep = "، "): string {
@@ -208,6 +301,7 @@ export const SAMPLE_ANSWERS: Answers = {
     "1. تختار الباقة (كيس أو كيسين في الشهر)\n2. تحدد أداة التحضير عشان نطحنلك صح، أو تختار حبوب\n3. الشحنة توصلك أول كل شهر\n4. تحضّر القهوة باتباع الكارت اللي جوه الشحنة\n5. تقيّم المحصول من الموقع عشان نظبط ترشيحات الشهر الجاي",
   targetAudience:
     "محبي القهوة اللي بيحضّروها في البيت أو المكتب: موظفين، فريلانسرز، وطلبة دراسات عليا. ناس بدأت تهتم بالقهوة المختصة بعد ما جربوها في الكافيهات، وعايزين نفس الجودة في البيت بتكلفة أقل من الكافيه يوميًا.",
+  industry: "Food & Beverage: قهوة مختصة (Specialty Coffee)",
   ageRange: ["25–34", "35–44"],
   location: "مصر، والتركيز على القاهرة الكبرى والإسكندرية (التوصيل متاح لكل المحافظات)",
   brandLanguage: ["عامية مصرية"],
@@ -237,4 +331,16 @@ export const SAMPLE_ANSWERS: Answers = {
   platforms: ["Instagram", "Facebook", "TikTok", "Website / Landing Page"],
   platformsOther: "",
   contactMethod: "الاشتراك من الموقع، أو رسايل Instagram، أو WhatsApp لخدمة العملاء",
+  nameLanguage: ["English", "عربي"],
+  nameLanguageOther: "",
+  customerLanguage: "عربي (عامية مصرية)، ومعظمهم بيفهم إنجليزي بسيط",
+  nameType: "مفتوح لكل الاحتمالات",
+  positioning: "Mid-range: احترافي، جودة عالية، وسعره في المتناول",
+  namePersonality: "Balanced: احترافي بس دافي وقريب",
+  nameLength: "5–7 حروف (المثالي)",
+  nameStructure: "كلمة واحدة (الأفضل)",
+  nameIncludeAvoid: "مش عايز كلمة Coffee أو Bean في الاسم. ومش عايز اسم شبه أسماء الكافيهات الكبيرة المعروفة.",
+  brandPersonality: ["Modern", "Friendly", "Premium"],
+  brandColors: "بني غامق، أوف وايت، ولمسة برتقالي محروق",
+  brandMessage: "القهوة المختصة بقت سهلة وقريبة من البيت، طازة كل شهر، ومن غير تعقيد",
 };

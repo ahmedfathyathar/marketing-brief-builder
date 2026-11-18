@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Info, ClipboardCheck } from "lucide-react";
-import { Answers, SECTIONS, sectionErrors, Field, isFilled } from "../data/questions";
-import { FieldShell, TextInput, TextArea, MultiSelect } from "./FormFields";
+import { Answers, Section, sectionErrors, Field, isFilled } from "../data/questions";
+import { FieldShell, TextInput, TextArea, MultiSelect, SingleSelect } from "./FormFields";
 
 interface Props {
+  sections: Section[];
   step: number;
   maxStep: number;
   answers: Answers;
@@ -14,11 +15,10 @@ interface Props {
   onReview: () => void;
 }
 
-export const REVIEW_STEP = SECTIONS.length;
-
-export function Stepper({ step, maxStep, answers, onGoto, onReview, reviewActive }: {
-  step: number; maxStep: number; answers: Answers; onGoto: (s: number) => void; onReview: () => void; reviewActive?: boolean;
+export function Stepper({ sections, step, maxStep, answers, onGoto, onReview, reviewActive }: {
+  sections: Section[]; step: number; maxStep: number; answers: Answers; onGoto: (s: number) => void; onReview: () => void; reviewActive?: boolean;
 }) {
+  const REVIEW_STEP = sections.length;
   const mobileNav = useRef<HTMLElement>(null);
   useEffect(() => {
     const nav = mobileNav.current;
@@ -28,7 +28,7 @@ export function Stepper({ step, maxStep, answers, onGoto, onReview, reviewActive
   return (
     <>
     <nav ref={mobileNav} aria-label="خطوات الـ Brief (موبايل)" className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:hidden">
-      {SECTIONS.map((s, i) => {
+      {sections.map((s, i) => {
         const current = !reviewActive && i === step;
         const reachable = i <= maxStep;
         return (
@@ -59,7 +59,7 @@ export function Stepper({ step, maxStep, answers, onGoto, onReview, reviewActive
     </nav>
     <nav aria-label="خطوات الـ Brief" className="card hidden p-3 lg:block">
       <ol className="flex flex-col gap-1">
-        {SECTIONS.map((s, i) => {
+        {sections.map((s, i) => {
           const current = !reviewActive && i === step;
           const reachable = i <= maxStep;
           const done = i < maxStep && sectionErrors(s, answers).length === 0;
@@ -140,6 +140,8 @@ function renderField(field: Field, answers: Answers, errors: string[], onChange:
       return <TextInput field={field} value={(v as string) ?? ""} error={err} onChange={(x) => onChange(field.id, x)} />;
     case "textarea":
       return <TextArea field={field} value={(v as string) ?? ""} error={err} onChange={(x) => onChange(field.id, x)} />;
+    case "single":
+      return <SingleSelect field={field} value={(v as string) ?? ""} error={err} onChange={(x) => onChange(field.id, x)} />;
     case "multiselect":
     case "chips": {
       const arr = Array.isArray(v) ? v : [];
@@ -167,8 +169,8 @@ function renderField(field: Field, answers: Answers, errors: string[], onChange:
   }
 }
 
-export function BriefForm({ step, maxStep, answers, onChange, onGoto, onNext, onBack, onReview }: Props) {
-  const section = SECTIONS[step];
+export function BriefForm({ sections, step, maxStep, answers, onChange, onGoto, onNext, onBack, onReview }: Props) {
+  const section = sections[Math.min(step, sections.length - 1)];
   const [showErrors, setShowErrors] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
   const errors = showErrors ? sectionErrors(section, answers) : [];
@@ -190,16 +192,16 @@ export function BriefForm({ step, maxStep, answers, onChange, onGoto, onNext, on
     onNext();
   };
 
-  const isLast = step === SECTIONS.length - 1;
+  const isLast = step >= sections.length - 1;
 
   return (
     <div ref={topRef} className="grid scroll-mt-24 grid-cols-1 gap-6 py-8 lg:grid-cols-[260px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-24 lg:self-start">
-        <Stepper step={step} maxStep={maxStep} answers={answers} onGoto={onGoto} onReview={onReview} />
+        <Stepper sections={sections} step={step} maxStep={maxStep} answers={answers} onGoto={onGoto} onReview={onReview} />
       </aside>
 
       <div className="flex min-w-0 flex-col gap-5">
-        <ProgressHeader step={step} total={SECTIONS.length} title={section.shortTitle} />
+        <ProgressHeader step={step} total={sections.length} title={section.shortTitle} />
 
         <form
           key={section.id}

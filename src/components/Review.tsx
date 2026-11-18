@@ -1,8 +1,9 @@
 import { ArrowRight, Pencil, Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { Answers, SECTIONS, isFilled, sectionErrors, answerText } from "../data/questions";
-import { Stepper, ProgressHeader, REVIEW_STEP } from "./BriefForm";
+import { Answers, Section, isFilled, sectionErrors, answerText } from "../data/questions";
+import { Stepper, ProgressHeader } from "./BriefForm";
 
 interface Props {
+  sections: Section[];
   answers: Answers;
   maxStep: number;
   onEdit: (step: number) => void;
@@ -14,20 +15,21 @@ function display(answers: Answers, id: string): string {
   return answerText(answers, id);
 }
 
-export function Review({ answers, maxStep, onEdit, onBack, onGenerate }: Props) {
-  const total = SECTIONS.reduce((n, s) => n + s.fields.length, 0);
-  const filled = SECTIONS.reduce((n, s) => n + s.fields.filter((f) => isFilled(answers[f.id])).length, 0);
-  const blocking = SECTIONS.map((s, i) => ({ i, s, errs: sectionErrors(s, answers) })).filter((x) => x.errs.length);
+export function Review({ sections, answers, maxStep, onEdit, onBack, onGenerate }: Props) {
+  const REVIEW_STEP = sections.length;
+  const total = sections.reduce((n, s) => n + s.fields.length, 0);
+  const filled = sections.reduce((n, s) => n + s.fields.filter((f) => isFilled(answers[f.id])).length, 0);
+  const blocking = sections.map((s, i) => ({ i, s, errs: sectionErrors(s, answers) })).filter((x) => x.errs.length);
   const emptyOptional = total - filled;
 
   return (
     <div className="grid grid-cols-1 gap-6 py-8 lg:grid-cols-[260px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-24 lg:self-start">
-        <Stepper step={REVIEW_STEP} maxStep={maxStep} answers={answers} onGoto={onEdit} onReview={() => {}} reviewActive />
+        <Stepper sections={sections} step={REVIEW_STEP} maxStep={maxStep} answers={answers} onGoto={onEdit} onReview={() => {}} reviewActive />
       </aside>
 
       <div className="flex min-w-0 flex-col gap-5">
-        <ProgressHeader step={REVIEW_STEP} total={SECTIONS.length} title="المراجعة" />
+        <ProgressHeader step={REVIEW_STEP} total={sections.length} title="المراجعة" />
 
         <header className="flex flex-col gap-2 pt-2">
           <h2 className="text-[1.6rem] font-bold text-ink">راجع الـ Marketing Brief بتاعك</h2>
@@ -61,7 +63,7 @@ export function Review({ answers, maxStep, onEdit, onBack, onGenerate }: Props) 
           </div>
         )}
 
-        {SECTIONS.map((s, i) => (
+        {sections.map((s, i) => (
           <section key={s.id} className="card overflow-hidden">
             <header className="flex items-center justify-between gap-3 border-b border-line bg-slate-50/70 px-4 py-3 sm:px-5 sm:py-3.5">
               <h3 className="flex items-center gap-3 text-[16px] font-semibold text-ink">

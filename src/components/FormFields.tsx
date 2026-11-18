@@ -130,3 +130,45 @@ export function MultiSelect({ field, value, error, onChange, variant = "cards" }
     </div>
   );
 }
+
+interface SingleProps {
+  field: Field;
+  value: string;
+  error?: boolean;
+  onChange: (v: string) => void;
+}
+
+/** One answer out of a few. Text before ":" is shown bold, the rest as a description. */
+export function SingleSelect({ field, value, error, onChange }: SingleProps) {
+  return (
+    <div id={`f-${field.id}`} role="radiogroup" aria-label={field.label} className="grid grid-cols-1 gap-2.5">
+      {field.options!.map((opt) => {
+        const on = value === opt;
+        const i = opt.indexOf(":");
+        const head = i > 0 ? opt.slice(0, i) : opt;
+        const rest = i > 0 ? opt.slice(i + 1).trim() : "";
+        return (
+          <button
+            key={opt}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(opt)}
+            className={[
+              "flex items-center gap-3 rounded-xl border px-4 py-3 text-start text-[15px] transition focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20",
+              on ? "border-primary bg-primary-50" : `${error ? "border-red-300" : "border-line"} bg-white hover:border-slate-300 hover:bg-slate-50`,
+            ].join(" ")}
+          >
+            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${on ? "border-primary" : "border-slate-300"}`}>
+              {on && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span dir="auto" className={on ? "font-semibold text-primary-700" : "font-medium text-ink"}>{head}</span>
+              {rest && <span className="text-[13px] leading-6 text-muted">{rest}</span>}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}

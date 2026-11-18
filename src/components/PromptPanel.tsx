@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Copy, Check, RefreshCw, AlertCircle, ExternalLink } from "lucide-react";
 import { Answers } from "../data/questions";
-import { PromptKind, OutputLang, LANG_LABELS, buildPrompt, missingFields, PROMPT_META } from "../lib/prompts";
+import { PromptKind, OutputLang, LANG_LABELS, buildPrompt, missingFields, PROMPT_META, HAS_LANG_OPTION } from "../lib/prompts";
 import { copyText } from "../lib/clipboard";
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
   onLang: (l: OutputLang) => void;
   onBack: () => void;
   onToast: (msg: string, tone?: "success" | "error") => void;
+  onAnswer: (id: string, value: string) => void;
 }
 
 const AI_TOOLS = [
@@ -19,7 +20,7 @@ const AI_TOOLS = [
   { name: "Gemini", href: "https://gemini.google.com/app" },
 ];
 
-export function PromptPanel({ kind, answers, lang, onLang, onBack, onToast }: Props) {
+export function PromptPanel({ kind, answers, lang, onLang, onBack, onToast, onAnswer }: Props) {
   const [version, setVersion] = useState(0);
   const [copied, setCopied] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -27,7 +28,7 @@ export function PromptPanel({ kind, answers, lang, onLang, onBack, onToast }: Pr
 
   // Rebuilds from the latest saved answers and the chosen output language.
   const prompt = useMemo(() => buildPrompt(kind, answers, { lang }), [kind, answers, lang, version]);
-  const missing = useMemo(() => missingFields(kind, answers), [kind, answers]);
+  const missing = useMemo(() => missingFields(kind, answers).filter((m) => !(kind === "logo" && m.startsWith("اسم البراند"))), [kind, answers]);
   const meta = PROMPT_META[kind];
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export function PromptPanel({ kind, answers, lang, onLang, onBack, onToast }: Pr
             <span className="tabular-nums">{words.toLocaleString("en-US")} كلمة</span>
           </p>
         </div>
+        {HAS_LANG_OPTION[kind] ? (
         <div className="flex w-full flex-col gap-1.5 sm:w-auto">
           <span className="text-[12px] font-medium text-muted">لغة رد الـ AI</span>
           <div role="radiogroup" aria-label="لغة رد الـ AI" className="grid grid-cols-3 rounded-xl border border-line bg-white p-1 sm:inline-flex">
@@ -92,7 +94,27 @@ export function PromptPanel({ kind, answers, lang, onLang, onBack, onToast }: Pr
             ))}
           </div>
         </div>
+        ) : (
+          <p className="max-w-xs text-[12px] leading-6 text-muted">الـ Prompt ده بالإنجليزي عشان أدوات الصور بتفهمه أحسن. الصقه في ChatGPT أو Gemini واطلب صورة.</p>
+        )}
       </header>
+
+      {kind === "logo" && (
+        <div className="card flex flex-col gap-2 p-4">
+          <label htmlFor="f-logo-name" className="text-[14px] font-semibold text-ink">اسم البراند اللي هيتكتب في اللوجو</label>
+          <input
+            id="f-logo-name"
+            type="text"
+            value={(answers.brandName as string) ?? ""}
+            onChange={(e) => onAnswer("brandName", e.target.value)}
+            placeholder="اكتب الاسم اللي اخترته، مثلًا: Rakwa"
+            className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[15px] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
+          />
+          <p className="text-[12px] text-muted">
+            {((answers.brandName as string) ?? "").trim() ? "الـ Prompt اتحدّث بالاسم ده." : "لسه مفيش اسم. الـ Prompt هيبقى فيه [INSERT BUSINESS NAME] لحد ما تكتبه."}
+          </p>
+        </div>
+      )}
 
       {missing.length > 0 && (
         <div className="flex items-start gap-3 rounded-2xl border border-line bg-white p-4 text-[13px] leading-6">
