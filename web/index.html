@@ -130,6 +130,8 @@ textarea#input::placeholder { color: #94A3B8; }
 .iconbtn:hover { background: #F1F5F9; }
 .brand-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
 #closeSide { width: 32px; height: 32px; }
+.head-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+@media (max-width: 480px) { .ghost .lbl { display: none; } .ghost { padding: 8px 10px; } }
 @media (min-width: 1100px) {
   .side { transform: none; z-index: 35; }
   .side.open { box-shadow: none; }
@@ -169,10 +171,16 @@ textarea#input::placeholder { color: #94A3B8; }
         <b dir="ltr">Startup Helper</b>
       </div>
       </div>
-      <button class="ghost" id="newChat" type="button" hidden>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        محادثة جديدة
+      <div class="head-actions">
+      <button class="ghost" id="share" type="button" aria-label="شارك Startup Helper">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        <span class="lbl">شارك</span>
       </button>
+      <button class="ghost" id="newChat" type="button" aria-label="محادثة جديدة" hidden>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="lbl">محادثة جديدة</span>
+      </button>
+      </div>
     </div>
   </header>
 
@@ -578,6 +586,21 @@ $("starters").addEventListener("click", (e) => {
   input.setSelectionRange(input.value.length, input.value.length);
 });
 $("newChat").addEventListener("click", startNewChat);
+
+/* Share the tool itself (never the person's chat): the phone's share sheet when there is one, otherwise copy the link. */
+const SHARE_URL = "https://bit.ly/marketingbriefath"; // the link people get when they share; null = this page's own address
+const SHARE_TEXT = "جرب Startup Helper: احكي عن الـ Startup بتاعك وخد Prompt جاهز لاسم البراند أو اللوجو أو الـ Landing Page أو الـ Sales Copy.";
+$("share").addEventListener("click", async () => {
+  const url = SHARE_URL || location.origin + location.pathname;
+  if (navigator.share) {
+    try { await navigator.share({ title: "Startup Helper", text: SHARE_TEXT, url }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch {}
+  if (!ok) { try { const ta = document.createElement("textarea"); ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.append(ta); ta.select(); ok = document.execCommand("copy"); ta.remove(); } catch {} }
+  toast(ok ? "اتنسخ لينك Startup Helper. ابعته لأي حد عايز يجربه." : "انسخ اللينك ده: " + url);
+});
 
 renderAll();
 if (state.turns.length) scrollDown(true);
