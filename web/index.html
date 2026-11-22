@@ -100,15 +100,74 @@ textarea#input::placeholder { color: #94A3B8; }
 
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 110px); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
 
+/* Saved chats: a drawer on phones and tablets, a fixed column at the right edge on wide screens. */
+.side { position: fixed; top: 0; bottom: 0; right: 0; z-index: 60; width: min(300px, 86vw); background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 14px) calc(env(safe-area-inset-right, 0px) + 14px) calc(env(safe-area-inset-bottom, 0px) + 14px) 14px; transform: translateX(100%); transition: transform .2s ease; }
+.side.open { transform: none; box-shadow: -10px 0 40px rgba(17,24,39,.15); }
+.side-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.side-top b { font-size: 14px; }
+.side .newbtn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; border: 1px solid var(--line); background: var(--primary-50); color: var(--primary-700); border-radius: 12px; padding: 10px; font-size: 14px; font-weight: 700; }
+.side .newbtn:hover { border-color: var(--primary); }
+.side .newbtn[disabled] { opacity: .5; cursor: default; }
+.chats { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin-inline: -6px; padding-inline: 6px; }
+.chats .label { font-size: 12px; font-weight: 700; color: var(--muted); padding: 10px 4px 4px; }
+.item { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+.item:hover, .item.on { background: #F1F5F9; }
+.item.on { box-shadow: inset -3px 0 0 var(--primary); }
+.item .open { flex: 1; min-width: 0; text-align: start; border: 0; background: transparent; padding: 9px 10px; display: flex; flex-direction: column; gap: 2px; color: var(--ink); }
+.item .open span { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .open small { font-size: 11.5px; color: var(--muted); }
+.item .del { flex-shrink: 0; width: 32px; height: 32px; border: 0; background: transparent; color: var(--muted); border-radius: 8px; display: grid; place-items: center; opacity: .55; }
+.item:hover .del, .item.on .del, .item .del:focus-visible { opacity: 1; }
+.item .del:hover { color: var(--danger); background: #FEF2F2; }
+.item.confirm { background: #FEF2F2; padding: 8px 10px; flex-wrap: wrap; gap: 8px; }
+.item.confirm p { margin: 0; flex: 1 1 100%; font-size: 13px; color: var(--danger); font-weight: 600; }
+.item.confirm button { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 5px 12px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.item.confirm button.yes { background: var(--danger); border-color: var(--danger); color: #fff; }
+.side-empty { font-size: 13px; color: var(--muted); line-height: 1.8; padding: 8px 4px; }
+.side-note { font-size: 11.5px; color: var(--muted); line-height: 1.7; border-top: 1px solid var(--line); padding-top: 10px; margin: 0; }
+.scrim { position: fixed; inset: 0; z-index: 55; background: rgba(17,24,39,.35); }
+.iconbtn { width: 38px; height: 38px; flex-shrink: 0; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; display: grid; place-items: center; }
+.iconbtn:hover { background: #F1F5F9; }
+.brand-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#closeSide { width: 32px; height: 32px; }
+@media (min-width: 1100px) {
+  .side { transform: none; z-index: 35; }
+  .side.open { box-shadow: none; }
+  .app { margin-right: 300px; }
+  #openSide, #closeSide, .scrim { display: none !important; }
+  .toast { left: calc(50% - 150px); }
+}
+
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
+
+<aside class="side" id="side" dir="rtl" lang="ar" aria-label="المحادثات القديمة">
+  <div class="side-top">
+    <b>المحادثات</b>
+    <button class="iconbtn" id="closeSide" type="button" aria-label="اقفل القايمة">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <button class="newbtn" id="sideNew" type="button">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    محادثة جديدة
+  </button>
+  <nav class="chats" id="chats"></nav>
+  <p class="side-note">المحادثات محفوظة على الجهاز والمتصفح ده بس.</p>
+</aside>
+<div class="scrim" id="scrim" hidden></div>
 
 <div class="app" dir="rtl" lang="ar">
   <header class="top gutter">
     <div class="col">
+      <div class="brand-wrap">
+      <button class="iconbtn" id="openSide" type="button" aria-label="المحادثات القديمة" aria-controls="side" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+      </button>
       <div class="brand">
         <span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
         <b dir="ltr">Startup Helper</b>
+      </div>
       </div>
       <button class="ghost" id="newChat" type="button" hidden>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -220,10 +279,38 @@ async function askServer(turns, { onText, signal }) {
 }
 
 /* ───────────────── State (kept in this browser) ───────────────── */
-const KEY = "mbb-chat:v1";
-let state = { turns: [], draft: "" };
-try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && Array.isArray(s.turns)) state = { turns: s.turns, draft: s.draft || "" }; } catch {}
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+/* Every chat is kept, newest first, so a new chat never loses the old ones. `state` is the open chat. */
+const KEY = "mbb-chats:v2", OLD_KEY = "mbb-chat:v1", MAX_CHATS = 60;
+const newChatObj = () => ({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), title: "", updated: 0, turns: [] });
+let store = { chats: [], currentId: null, draft: "" };
+let state = newChatObj();
+try {
+  const s = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (s && Array.isArray(s.chats)) {
+    store = { chats: s.chats.filter((c) => c && c.id && Array.isArray(c.turns) && c.turns.length), currentId: s.currentId || null, draft: s.draft || "" };
+  } else {
+    const old = JSON.parse(localStorage.getItem(OLD_KEY) || "null");
+    if (old && Array.isArray(old.turns)) {
+      store.draft = old.draft || "";
+      if (old.turns.length) { const c = { ...newChatObj(), turns: old.turns, updated: Date.now() }; c.title = titleOf(c); store.chats = [c]; store.currentId = c.id; }
+    }
+  }
+  state = store.chats.find((c) => c.id === store.currentId) || newChatObj();
+} catch {}
+function titleOf(chat) {
+  const first = chat.turns.find((t) => t.role === "user");
+  const t = (first ? first.content : "").replace(/\s+/g, " ").trim();
+  return t.length > 60 ? t.slice(0, 60) + "…" : t || "محادثة";
+}
+function save() {
+  store.currentId = state.id;
+  store.chats.sort((a, b) => b.updated - a.updated);
+  store.chats = store.chats.slice(0, MAX_CHATS);
+  for (;;) {
+    try { localStorage.setItem(KEY, JSON.stringify(store)); break; }
+    catch { if (store.chats.length > 1) store.chats.pop(); else break; } // storage full: drop the oldest chat and try again
+  }
+}
 
 const $ = (id) => document.getElementById(id);
 const thread = $("thread"), input = $("input"), send = $("send"), form = $("form");
@@ -295,7 +382,79 @@ function renderAll() {
   const has = state.turns.length > 0;
   $("empty").hidden = has;
   $("newChat").hidden = !has;
+  renderSide();
 }
+
+/* ───────────────── Saved chats list ───────────────── */
+const chatsEl = $("chats");
+let confirmId = null;
+function whenText(ms) {
+  const d = new Date(ms), now = new Date();
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(now) - day(d)) / 864e5);
+  if (diff === 0) return "النهارده " + d.toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" });
+  if (diff === 1) return "امبارح";
+  if (diff < 7) return "من " + diff + " أيام";
+  return d.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
+}
+function renderSide() {
+  chatsEl.replaceChildren();
+  $("sideNew").disabled = !state.turns.length;
+  if (!store.chats.length) {
+    const e = document.createElement("p"); e.className = "side-empty";
+    e.textContent = "لسه مفيش محادثات. أول ما تبعت رسالة، المحادثة هتتحفظ هنا.";
+    chatsEl.append(e); return;
+  }
+  const label = document.createElement("div"); label.className = "label"; label.textContent = "المحادثات القديمة"; chatsEl.append(label);
+  for (const c of store.chats) {
+    const row = document.createElement("div");
+    row.className = "item" + (c.id === state.id ? " on" : "");
+    row.dataset.id = c.id;
+    if (c.id === confirmId) {
+      row.classList.add("confirm");
+      row.innerHTML = `<p>تمسح المحادثة دي؟ مش هترجع تاني.</p><button class="yes" type="button" data-act="yes">امسح</button><button type="button" data-act="no">لأ</button>`;
+    } else {
+      row.innerHTML = `<button class="open" type="button" data-act="open"><span></span><small></small></button>
+        <button class="del" type="button" data-act="del" aria-label="امسح المحادثة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>`;
+      row.querySelector("span").textContent = c.title || titleOf(c);
+      row.querySelector("small").textContent = whenText(c.updated);
+      if (c.id === state.id) row.querySelector(".open").setAttribute("aria-current", "true");
+    }
+    chatsEl.append(row);
+  }
+}
+function openChat(id) {
+  if (id === state.id) { closeSide(); return; }
+  if (busy) ctl?.abort();
+  state = store.chats.find((c) => c.id === id) || newChatObj();
+  save(); renderAll(); closeSide(); scrollDown(true);
+}
+function startNewChat() {
+  if (busy) ctl?.abort();
+  state = newChatObj(); save(); renderAll(); closeSide();
+  input.value = ""; store.draft = ""; save(); autosize(); input.focus(); scrollTo({ top: 0 });
+}
+chatsEl.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const id = b.closest(".item").dataset.id;
+  const act = b.dataset.act;
+  if (act === "open") openChat(id);
+  else if (act === "del") { confirmId = id; renderSide(); chatsEl.querySelector('[data-act="no"]')?.focus(); }
+  else if (act === "no") { confirmId = null; renderSide(); }
+  else if (act === "yes") {
+    confirmId = null;
+    store.chats = store.chats.filter((c) => c.id !== id);
+    if (id === state.id) { if (busy) ctl?.abort(); state = newChatObj(); renderAll(); }
+    save(); renderSide();
+  }
+});
+function openSide() { $("side").classList.add("open"); $("scrim").hidden = false; $("openSide").setAttribute("aria-expanded", "true"); }
+function closeSide() { $("side").classList.remove("open"); $("scrim").hidden = true; $("openSide").setAttribute("aria-expanded", "false"); confirmId = null; }
+$("openSide").addEventListener("click", openSide);
+$("closeSide").addEventListener("click", closeSide);
+$("scrim").addEventListener("click", closeSide);
+$("sideNew").addEventListener("click", startNewChat);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("side").classList.contains("open")) closeSide(); });
 
 /* ───────────────── Copy ───────────────── */
 let toastT;
@@ -346,10 +505,10 @@ function setBusy(b) {
 }
 function updateSend() { send.disabled = !busy && !input.value.trim(); }
 
-function trimmedTurns() {
+function trimmedTurns(chat) {
   // Keep the conversation under the size limit by dropping the oldest turns; the instructions are always sent.
   // Assistant turns that only hold an error note are not real replies, so Claude never sees them.
-  let turns = state.turns.filter((t) => t.content).map(({ role, content }) => ({ role, content }));
+  let turns = chat.turns.filter((t) => t.content).map(({ role, content }) => ({ role, content }));
   const size = (arr) => (API_URL ? arr.reduce((n, t) => n + t.content.length, 0) * 3 : new Blob([INSTRUCTIONS, ...arr.map((t) => t.content)]).size);
   const maxTurns = API_URL ? 50 : 400;
   while (turns.length > 1 && (size(turns) > 230000 || turns.length > maxTurns)) turns = turns.slice(2);
@@ -360,8 +519,11 @@ function trimmedTurns() {
 async function sendMessage(text) {
   text = text.trim();
   if (!text || busy) return;
-  state.turns.push({ role: "user", content: text });
-  state.draft = ""; input.value = ""; autosize(); save();
+  const chat = state;
+  chat.turns.push({ role: "user", content: text });
+  if (!store.chats.includes(chat)) { chat.title = titleOf(chat); store.chats.unshift(chat); }
+  chat.updated = Date.now();
+  store.draft = ""; input.value = ""; autosize(); save();
   renderAll();
 
   const el = msgEl("assistant");
@@ -371,22 +533,24 @@ async function sendMessage(text) {
   ctl = new AbortController();
   let shown = "";
   try {
-    const { text: reply, truncated } = await askAI(trimmedTurns(), {
+    const { text: reply, truncated } = await askAI(trimmedTurns(chat), {
       signal: ctl.signal,
-      onText: ({ text }) => { shown = text; renderAI(el, text); scrollDown(); },
+      onText: ({ text }) => { shown = text; if (chat === state) { renderAI(el, text); scrollDown(); } },
     });
-    state.turns.push({ role: "assistant", content: reply, ...(truncated ? { note: "الرد اتقطع قبل ما يخلص. اكتب «كمل» أو اطلب Prompt واحد بس." } : {}) });
+    chat.turns.push({ role: "assistant", content: reply, ...(truncated ? { note: "الرد اتقطع قبل ما يخلص. اكتب «كمل» أو اطلب Prompt واحد بس." } : {}) });
   } catch (e) {
     const code = e && e.code;
     const partial = (e && e.text) || shown;
     if (code === "cancelled") {
-      if (partial) state.turns.push({ role: "assistant", content: partial, note: "وقفت الرد." });
+      if (partial) chat.turns.push({ role: "assistant", content: partial, note: "وقفت الرد." });
     } else {
-      if (partial && code !== "refused") state.turns.push({ role: "assistant", content: partial, note: "الرد اتقطع. ابعت رسالتك تاني." });
-      else state.turns.push({ role: "assistant", content: "", note: ERR[code] || "حصلت مشكلة في الاتصال. ابعت رسالتك تاني." });
+      if (partial && code !== "refused") chat.turns.push({ role: "assistant", content: partial, note: "الرد اتقطع. ابعت رسالتك تاني." });
+      else chat.turns.push({ role: "assistant", content: "", note: ERR[code] || "حصلت مشكلة في الاتصال. ابعت رسالتك تاني." });
     }
   } finally {
-    save(); renderAll(); setBusy(false); scrollDown(); input.focus();
+    chat.updated = Date.now();
+    save(); setBusy(false);
+    if (chat === state) { renderAll(); scrollDown(); input.focus(); } else renderSide();
   }
 }
 
@@ -397,8 +561,8 @@ function scrollDown(force) {
 
 /* ───────────────── Composer ───────────────── */
 function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 200) + "px"; updateSend(); }
-input.value = state.draft; autosize();
-input.addEventListener("input", () => { state.draft = input.value; save(); autosize(); });
+input.value = store.draft; autosize();
+input.addEventListener("input", () => { store.draft = input.value; save(); autosize(); });
 input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } });
 form.addEventListener("submit", (e) => { e.preventDefault(); if (busy) { ctl?.abort(); return; } sendMessage(input.value); });
 const FOLLOW_UP = {
@@ -410,13 +574,10 @@ const FOLLOW_UP = {
 $("starters").addEventListener("click", (e) => {
   const b = e.target.closest(".chip"); if (!b || busy) return;
   if (state.turns.length) { sendMessage(FOLLOW_UP[b.dataset.kind]); return; }
-  input.value = b.dataset.text; state.draft = input.value; save(); autosize(); input.focus();
+  input.value = b.dataset.text; store.draft = input.value; save(); autosize(); input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
 });
-$("newChat").addEventListener("click", () => {
-  if (busy) ctl?.abort();
-  state = { turns: [], draft: "" }; save(); renderAll(); input.value = ""; autosize(); input.focus(); scrollTo({ top: 0 });
-});
+$("newChat").addEventListener("click", startNewChat);
 
 renderAll();
 if (state.turns.length) scrollDown(true);
