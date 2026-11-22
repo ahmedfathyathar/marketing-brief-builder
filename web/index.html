@@ -44,12 +44,15 @@ main { flex: 1; padding-block: 24px 16px; }
 .empty h1 { margin: 0; font-size: clamp(1.6rem, 4.5vw, 2.2rem); line-height: 1.4; text-wrap: balance; }
 .empty h1 span { color: var(--primary); }
 .empty p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.9; max-width: 60ch; }
-.starters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.starter { text-align: start; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; transition: border-color .15s, box-shadow .15s; }
-.starter:hover { border-color: #94A3B8; box-shadow: 0 2px 10px rgba(17,24,39,.06); }
-.starter strong { font-size: 15px; }
-.starter span { font-size: 13px; color: var(--muted); line-height: 1.7; }
-@media (max-width: 560px) { .starters { grid-template-columns: 1fr; } }
+.starters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.starter { text-align: start; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 18px; padding: 20px; min-height: 150px; display: flex; flex-direction: column; gap: 8px; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.starter:hover { border-color: var(--primary); box-shadow: 0 8px 24px rgba(37,99,235,.10); transform: translateY(-2px); }
+.starter[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-50); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+.starter .ico { width: 44px; height: 44px; border-radius: 12px; background: var(--primary-50); color: var(--primary); display: grid; place-items: center; margin-bottom: 4px; }
+.starter[aria-pressed="true"] .ico { background: var(--primary); color: #fff; }
+.starter strong { font-size: 18px; font-weight: 700; }
+.starter span { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+@media (max-width: 560px) { .empty { padding-top: 1vh; gap: 14px; } .empty p { font-size: 14.5px; line-height: 1.8; } .starters { gap: 10px; } .starter { padding: 14px; min-height: 0; gap: 4px; border-radius: 16px; } .starter .ico { width: 38px; height: 38px; } .starter strong { font-size: 15.5px; } .starter span { font-size: 12.5px; } }
 
 .thread { display: flex; flex-direction: column; gap: 18px; }
 .msg { display: flex; flex-direction: column; gap: 10px; max-width: 100%; min-width: 0; }
@@ -188,7 +191,13 @@ textarea#input::placeholder { color: #94A3B8; }
     <div class="col">
       <section class="empty" id="empty">
         <h1>قولي بتعمل إيه وعايز إيه، <span>وأنا أطلعلك الـ Prompt.</span></h1>
-        <p>اختار من الزراير تحت إنت عايز إيه، واكتب عن الـ Startup بتاعك بكلامك العادي. لو فيه معلومة ناقصة هسألك عليها، وفي الآخر هتاخد Prompt جاهز تنسخه وتحطه في ChatGPT أو Claude أو Gemini.</p>
+        <p>اختار إنت عايز إيه، واكتب عن الـ Startup بتاعك بكلامك العادي. لو فيه معلومة ناقصة هسألك عليها، وفي الآخر هتاخد Prompt جاهز تنسخه وتحطه في ChatGPT أو Claude أو Gemini.</p>
+        <div class="starters" id="bigStarters" role="group" aria-label="اختار إنت عايز إيه">
+          <button class="starter" type="button" data-kind="name" data-text="عايز اسم لـ SaaS جديد. المنتج بتاعي " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.3 9.3a1 1 0 0 0 1.4 0l8.6-8.6a1 1 0 0 0 0-1.4z"/><circle cx="7" cy="7" r="1.5"/></svg></span><strong>اسم للبراند</strong><span>أسامي مميزة وسهلة تتفتكر للـ SaaS بتاعك</span></button>
+          <button class="starter" type="button" data-kind="logo" data-text="عايز لوجو للـ SaaS بتاعي. اسم المنتج " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 21h20z"/><circle cx="12" cy="14" r="3"/></svg></span><strong>لوجو</strong><span>لوجو احترافي ترسمه أداة الصور</span></button>
+          <button class="starter" type="button" data-kind="landing" data-text="عايز Landing Page للـ SaaS بتاعي. المنتج بيعمل " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span><strong>Landing Page</strong><span>صفحة كاملة بالديزاين والكلام</span></button>
+          <button class="starter" type="button" data-kind="copy" data-text="عايز إعلانات وكابشنز للـ SaaS بتاعي. المنتج بيعمل " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><strong>Sales Copy</strong><span>إعلانات وكابشنز و Hooks بتبيع</span></button>
+        </div>
         <div class="unavailable" id="unavailable" hidden>الشات ده بيرد عليه Claude، وبيشتغل لما تفتح الصفحة جوه Claude وتكون مسجل دخول. لو اتسألت تسمح للصفحة تستخدم Claude، دوس سماح.</div>
       </section>
       <div class="thread" id="thread" aria-live="polite"></div>
@@ -389,6 +398,7 @@ function renderAll() {
   }
   const has = state.turns.length > 0;
   $("empty").hidden = has;
+  $("starters").hidden = !has; // small chips above the composer once the chat has started; big cards before that
   $("newChat").hidden = !has;
   renderSide();
 }
@@ -440,6 +450,7 @@ function openChat(id) {
 function startNewChat() {
   if (busy) ctl?.abort();
   state = newChatObj(); save(); renderAll(); closeSide();
+  document.querySelectorAll("#bigStarters .starter").forEach((s) => s.setAttribute("aria-pressed", "false"));
   input.value = ""; store.draft = ""; save(); autosize(); input.focus(); scrollTo({ top: 0 });
 }
 chatsEl.addEventListener("click", (e) => {
@@ -582,6 +593,12 @@ const FOLLOW_UP = {
 $("starters").addEventListener("click", (e) => {
   const b = e.target.closest(".chip"); if (!b || busy) return;
   if (state.turns.length) { sendMessage(FOLLOW_UP[b.dataset.kind]); return; }
+  input.value = b.dataset.text; store.draft = input.value; save(); autosize(); input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+});
+$("bigStarters").addEventListener("click", (e) => {
+  const b = e.target.closest(".starter"); if (!b || busy) return;
+  document.querySelectorAll("#bigStarters .starter").forEach((s) => s.setAttribute("aria-pressed", String(s === b)));
   input.value = b.dataset.text; store.draft = input.value; save(); autosize(); input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
 });
