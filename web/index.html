@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="description" content="Startup Helper: احكي عن الـ Startup بتاعك وخد Prompt جاهز لاسم البراند أو اللوجو أو الـ Landing Page أو الـ Sales Copy.">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 </head>
@@ -76,13 +76,17 @@ main { flex: 1; padding-block: 24px 16px; }
 .copy:hover { background: var(--primary-700); }
 .copy.done { background: var(--success); }
 .copy[disabled] { opacity: .5; cursor: default; }
-.pcard pre { margin: 0; padding: 14px 16px; max-height: 420px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font); font-size: 13.5px; line-height: 1.9; color: var(--ink); }
-.pcard.open pre { max-height: none; }
+.pcard pre { margin: 0; padding: 14px 16px; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font); font-size: 13.5px; line-height: 1.9; color: var(--ink); }
+/* Long prompts fold instead of scrolling inside the page; while one is being written, the newest lines show. */
+.pcard.long pre { max-height: 360px; -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent); mask-image: linear-gradient(to bottom, #000 72%, transparent); }
+.pcard.writing pre { max-height: 260px; -webkit-mask-image: linear-gradient(to top, #000 72%, transparent); mask-image: linear-gradient(to top, #000 72%, transparent); }
+.pcard.open pre { max-height: none; -webkit-mask-image: none; mask-image: none; }
 .pcard .more { display: block; width: 100%; border: 0; border-top: 1px solid var(--line); background: var(--card); padding: 8px; font-size: 13px; font-weight: 600; color: var(--primary-700); }
 .note { font-size: 13px; color: var(--amber-ink); background: var(--amber-bg); border-radius: 10px; padding: 8px 12px; }
 .err { font-size: 13px; color: var(--danger); }
 
-footer.composer { position: sticky; bottom: 0; z-index: 20; background: linear-gradient(to top, var(--bg) 75%, rgba(248,250,252,0)); padding-top: 10px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); }
+footer.composer { position: sticky; bottom: 0; z-index: 20; background: var(--bg); padding-top: 10px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); }
+footer.composer::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 18px; background: linear-gradient(to top, var(--bg), rgba(248,250,252,0)); pointer-events: none; }
 .box { display: flex; align-items: flex-end; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 8px 8px 8px 8px; box-shadow: 0 4px 18px rgba(17,24,39,.07); }
 .box:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37,99,235,.12); }
 textarea#input { flex: 1; min-width: 0; border: 0; resize: none; background: transparent; font: inherit; font-size: 16px; line-height: 1.8; color: var(--ink); padding: 6px 8px; max-height: 200px; outline: none; }
@@ -92,6 +96,10 @@ textarea#input::placeholder { color: #94A3B8; }
 .send[disabled] { background: #CBD5E1; cursor: default; }
 .send.stop { background: var(--ink); }
 .hint { margin: 8px 4px 0; font-size: 12px; color: var(--muted); text-align: center; }
+.picked { display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; font-size: 13px; color: var(--muted); }
+.picked b { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-50); color: var(--primary-700); border: 1px solid #C7D7FE; border-radius: 99px; padding: 5px 6px 5px 12px; font-size: 13.5px; }
+.picked b button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--primary-700); display: grid; place-items: center; padding: 0; }
+.picked b button:hover { background: #DCE6FE; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0 10px; }
 @media (max-width: 420px) { .chips { gap: 6px; } .chip { padding: 6px 11px; font-size: 13px; } }
 .chips::-webkit-scrollbar { display: none; }
@@ -143,6 +151,30 @@ textarea#input::placeholder { color: #94A3B8; }
   .toast { left: calc(50% - 150px); }
 }
 
+/* Phones: give the chat the screen. One scrolling row of chips, no keyboard hint, a slimmer composer. */
+button, a { -webkit-tap-highlight-color: transparent; }
+@media (pointer: coarse) { .hint { display: none; } }
+@media (max-width: 560px) {
+  main { padding-block: 16px 8px; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * max(16px, env(safe-area-inset-right, 0px))) calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 2px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); gap: 6px; }
+  .chip { padding: 6px 12px; font-size: 13px; }
+  footer.composer { padding-top: 6px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+  .box { padding: 6px; border-radius: 16px; }
+  textarea#input { padding: 6px; line-height: 1.7; max-height: 160px; }
+  .send { width: 40px; height: 40px; }
+  .thread { gap: 14px; }
+  .bubble { font-size: 15px; line-height: 1.85; }
+  .msg.user .bubble { max-width: 88%; }
+  .pcard .bar { padding: 10px 12px; }
+  .pcard .kind em { display: none; }
+  .pcard pre { padding: 12px 14px; font-size: 13px; }
+  .pcard.long pre { max-height: 300px; }
+  .pcard .more { padding: 11px; font-size: 14px; }
+  .copy { padding: 9px 14px; }
+  .toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); width: max-content; max-width: calc(100vw - 32px); text-align: center; }
+  .side .item .open { padding-block: 11px; }
+}
+
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 
@@ -175,7 +207,7 @@ textarea#input::placeholder { color: #94A3B8; }
       </div>
       </div>
       <div class="head-actions">
-      <button class="ghost" id="share" type="button" aria-label="شارك Startup Helper">
+      <button class="ghost" id="share" type="button" aria-label="انسخ لينك Startup Helper">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
         <span class="lbl">شارك</span>
       </button>
@@ -191,12 +223,12 @@ textarea#input::placeholder { color: #94A3B8; }
     <div class="col">
       <section class="empty" id="empty">
         <h1>قولي بتعمل إيه وعايز إيه، <span>وأنا أطلعلك الـ Prompt.</span></h1>
-        <p>اختار إنت عايز إيه، واكتب عن الـ Startup بتاعك بكلامك العادي. لو فيه معلومة ناقصة هسألك عليها، وفي الآخر هتاخد Prompt جاهز تنسخه وتحطه في ChatGPT أو Claude أو Gemini.</p>
+        <p>اختار إنت عايز إيه، واكتب عن الـ Startup بتاعك بكلامك العادي. هسألك على أي معلومة ناقصة، وفي الآخر هتاخد Prompt جاهز تنسخه وتحطه في ChatGPT أو Claude أو Gemini.</p>
         <div class="starters" id="bigStarters" role="group" aria-label="اختار إنت عايز إيه">
-          <button class="starter" type="button" data-kind="name" data-text="عايز اسم لـ SaaS جديد. المنتج بتاعي " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.3 9.3a1 1 0 0 0 1.4 0l8.6-8.6a1 1 0 0 0 0-1.4z"/><circle cx="7" cy="7" r="1.5"/></svg></span><strong>اسم للبراند</strong><span>أسامي مميزة وسهلة تتفتكر للـ SaaS بتاعك</span></button>
-          <button class="starter" type="button" data-kind="logo" data-text="عايز لوجو للـ SaaS بتاعي. اسم المنتج " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 21h20z"/><circle cx="12" cy="14" r="3"/></svg></span><strong>لوجو</strong><span>لوجو احترافي ترسمه أداة الصور</span></button>
-          <button class="starter" type="button" data-kind="landing" data-text="عايز Landing Page للـ SaaS بتاعي. المنتج بيعمل " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span><strong>Landing Page</strong><span>صفحة كاملة بالديزاين والكلام</span></button>
-          <button class="starter" type="button" data-kind="copy" data-text="عايز إعلانات وكابشنز للـ SaaS بتاعي. المنتج بيعمل " aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><strong>Sales Copy</strong><span>إعلانات وكابشنز و Hooks بتبيع</span></button>
+          <button class="starter" type="button" data-kind="name" aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.3 9.3a1 1 0 0 0 1.4 0l8.6-8.6a1 1 0 0 0 0-1.4z"/><circle cx="7" cy="7" r="1.5"/></svg></span><strong>اسم للبراند</strong><span>أسامي مميزة وسهلة تتفتكر للـ SaaS بتاعك</span></button>
+          <button class="starter" type="button" data-kind="logo" aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 21h20z"/><circle cx="12" cy="14" r="3"/></svg></span><strong>لوجو</strong><span>لوجو احترافي ترسمه أداة الصور</span></button>
+          <button class="starter" type="button" data-kind="landing" aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span><strong>Landing Page</strong><span>صفحة كاملة بالديزاين والكلام</span></button>
+          <button class="starter" type="button" data-kind="copy" aria-pressed="false"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><strong>Sales Copy</strong><span>إعلانات وكابشنز و Hooks بتبيع</span></button>
         </div>
         <div class="unavailable" id="unavailable" hidden>الشات ده بيرد عليه Claude، وبيشتغل لما تفتح الصفحة جوه Claude وتكون مسجل دخول. لو اتسألت تسمح للصفحة تستخدم Claude، دوس سماح.</div>
       </section>
@@ -207,13 +239,14 @@ textarea#input::placeholder { color: #94A3B8; }
   <footer class="composer gutter">
     <div class="col">
       <div class="chips" id="starters" role="toolbar" aria-label="اللي Startup Helper يقدر يطلعه">
-        <button class="chip" type="button" data-kind="name" data-text="عايز اسم لـ SaaS جديد. المنتج بتاعي ">اسم للبراند</button>
-        <button class="chip" type="button" data-kind="logo" data-text="عايز لوجو للـ SaaS بتاعي. اسم المنتج ">لوجو</button>
-        <button class="chip" type="button" data-kind="landing" data-text="عايز Landing Page للـ SaaS بتاعي. المنتج بيعمل ">Landing Page</button>
-        <button class="chip" type="button" data-kind="copy" data-text="عايز إعلانات وكابشنز للـ SaaS بتاعي. المنتج بيعمل ">Sales Copy</button>
+        <button class="chip" type="button" data-kind="name">اسم للبراند</button>
+        <button class="chip" type="button" data-kind="logo">لوجو</button>
+        <button class="chip" type="button" data-kind="landing">Landing Page</button>
+        <button class="chip" type="button" data-kind="copy">Sales Copy</button>
       </div>
+      <div class="picked" id="picked" hidden>إنت اخترت <b><span id="pickedName"></span><button type="button" id="unpick" aria-label="شيل الاختيار"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></b></div>
       <form class="box" id="form">
-        <textarea id="input" rows="1" aria-label="رسالتك" placeholder="مثلا: عندي SaaS لحجز مواعيد العيادات، وعايز Landing Page…"></textarea>
+        <textarea id="input" rows="1" aria-label="رسالتك" placeholder="اكتب عن الـ Startup بتاعك وعايز إيه…"></textarea>
         <button class="send" id="send" type="submit" aria-label="ابعت" disabled>
           <svg id="icoSend" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
           <svg id="icoStop" hidden width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
@@ -364,7 +397,10 @@ function promptCard(p) {
   card.querySelector("pre").textContent = p.v;
   const btn = card.querySelector(".copy");
   btn.addEventListener("click", () => copyText(p.v, btn, card.querySelector("pre")));
-  if (p.done && p.v.split("\n").length > 18) {
+  const lines = p.v.split("\n").length;
+  if (!p.done && lines > 10) card.classList.add("writing");
+  if (p.done && lines > 14) {
+    card.classList.add("long");
     const more = document.createElement("button");
     more.type = "button"; more.className = "more"; more.textContent = "اعرض الـ Prompt كله";
     more.addEventListener("click", () => { card.classList.toggle("open"); more.textContent = card.classList.contains("open") ? "صغر" : "اعرض الـ Prompt كله"; });
@@ -377,7 +413,7 @@ function renderAI(el, text) {
   el.replaceChildren();
   for (const p of parse(text)) {
     if (p.t === "text") { const b = document.createElement("div"); b.className = "bubble"; b.innerHTML = inline(p.v); el.append(b); }
-    else el.append(promptCard(p));
+    else { const c = promptCard(p); el.append(c); if (c.classList.contains("writing")) { const pre = c.querySelector("pre"); pre.scrollTop = pre.scrollHeight; } }
   }
 }
 
@@ -450,8 +486,7 @@ function openChat(id) {
 function startNewChat() {
   if (busy) ctl?.abort();
   state = newChatObj(); save(); renderAll(); closeSide();
-  document.querySelectorAll("#bigStarters .starter").forEach((s) => s.setAttribute("aria-pressed", "false"));
-  input.value = ""; store.draft = ""; save(); autosize(); input.focus(); scrollTo({ top: 0 });
+  input.value = ""; store.draft = ""; setKind(null); if (!TOUCH) input.focus(); scrollTo({ top: 0 });
 }
 chatsEl.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-act]"); if (!b) return;
@@ -539,10 +574,11 @@ async function sendMessage(text) {
   text = text.trim();
   if (!text || busy) return;
   const chat = state;
+  if (pickedKind && !chat.turns.length) text = INTENT[pickedKind] + "\n" + text;
   chat.turns.push({ role: "user", content: text });
   if (!store.chats.includes(chat)) { chat.title = titleOf(chat); store.chats.unshift(chat); }
   chat.updated = Date.now();
-  store.draft = ""; input.value = ""; autosize(); save();
+  store.draft = ""; input.value = ""; setKind(null);
   renderAll();
 
   const el = msgEl("assistant");
@@ -569,7 +605,7 @@ async function sendMessage(text) {
   } finally {
     chat.updated = Date.now();
     save(); setBusy(false);
-    if (chat === state) { renderAll(); scrollDown(); input.focus(); } else renderSide();
+    if (chat === state) { renderAll(); scrollDown(); if (!TOUCH) input.focus(); } else renderSide();
   }
 }
 
@@ -579,10 +615,39 @@ function scrollDown(force) {
 }
 
 /* ───────────────── Composer ───────────────── */
-function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 200) + "px"; updateSend(); }
-input.value = store.draft; autosize();
+/* On phones Enter makes a new line (send with the button) and the keyboard is not reopened after every reply. */
+const TOUCH = matchMedia("(pointer: coarse)").matches;
+function autosize() {
+  input.style.height = "auto";
+  let h = input.scrollHeight;
+  if (!input.value && input.placeholder) { input.value = input.placeholder; h = input.scrollHeight; input.value = ""; } // show the whole example
+  input.style.height = Math.min(h, TOUCH ? 160 : 200) + "px";
+  updateSend();
+}
+input.value = store.draft;
 input.addEventListener("input", () => { store.draft = input.value; save(); autosize(); });
-input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } });
+input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !TOUCH) { e.preventDefault(); form.requestSubmit(); } });
+
+/* Picking an output shows an example in the box (it disappears as soon as they type) and tells Claude what they picked. */
+const DEFAULT_PH = input.placeholder;
+const EXAMPLES = {
+  name: "مثلا: SaaS بيساعد العيادات تنظم المواعيد والفواتير، والجمهور دكاترة العيادات الخاصة في مصر",
+  logo: "مثلا: اسم المنتج Clinio، SaaS لحجز مواعيد العيادات، وعايز لوجو بسيط وعصري",
+  landing: "مثلا: Clinio، SaaS لحجز مواعيد العيادات، الاشتراك 499 جنيه في الشهر، وعايز الدكتور يجرب 14 يوم ببلاش",
+  copy: "مثلا: Clinio، SaaS لحجز مواعيد العيادات، وعايز إعلانات فيسبوك وانستجرام للدكاترة",
+};
+const INTENT = { name: "عايز Prompt لاسم البراند.", logo: "عايز Prompt للوجو.", landing: "عايز Prompt لـ Landing Page.", copy: "عايز Prompt لـ Sales Copy." };
+let pickedKind = EXAMPLES[store.kind] ? store.kind : null;
+function setKind(kind) {
+  pickedKind = kind && EXAMPLES[kind] ? kind : null;
+  store.kind = pickedKind; save();
+  input.placeholder = pickedKind ? EXAMPLES[pickedKind] : DEFAULT_PH;
+  $("picked").hidden = !pickedKind;
+  if (pickedKind) $("pickedName").textContent = KIND_LABEL[pickedKind][0];
+  document.querySelectorAll("#bigStarters .starter").forEach((s) => s.setAttribute("aria-pressed", String(s.dataset.kind === pickedKind)));
+  autosize();
+}
+$("unpick").addEventListener("click", () => { setKind(null); input.focus(); });
 form.addEventListener("submit", (e) => { e.preventDefault(); if (busy) { ctl?.abort(); return; } sendMessage(input.value); });
 const FOLLOW_UP = {
   name: "عايز كمان Prompt لاسم البراند.",
@@ -593,30 +658,24 @@ const FOLLOW_UP = {
 $("starters").addEventListener("click", (e) => {
   const b = e.target.closest(".chip"); if (!b || busy) return;
   if (state.turns.length) { sendMessage(FOLLOW_UP[b.dataset.kind]); return; }
-  input.value = b.dataset.text; store.draft = input.value; save(); autosize(); input.focus();
-  input.setSelectionRange(input.value.length, input.value.length);
+  setKind(b.dataset.kind); input.focus();
 });
 $("bigStarters").addEventListener("click", (e) => {
   const b = e.target.closest(".starter"); if (!b || busy) return;
-  document.querySelectorAll("#bigStarters .starter").forEach((s) => s.setAttribute("aria-pressed", String(s === b)));
-  input.value = b.dataset.text; store.draft = input.value; save(); autosize(); input.focus();
-  input.setSelectionRange(input.value.length, input.value.length);
+  setKind(b.dataset.kind); input.focus();
 });
+setKind(pickedKind);
 $("newChat").addEventListener("click", startNewChat);
 
-/* Share the tool itself (never the person's chat): the phone's share sheet when there is one, otherwise copy the link. */
+/* Share the tool itself (never the person's chat): copies the short link. */
 const SHARE_URL = "https://bit.ly/marketingbriefath"; // the link people get when they share; null = this page's own address
-const SHARE_TEXT = "جرب Startup Helper: احكي عن الـ Startup بتاعك وخد Prompt جاهز لاسم البراند أو اللوجو أو الـ Landing Page أو الـ Sales Copy.";
 $("share").addEventListener("click", async () => {
   const url = SHARE_URL || location.origin + location.pathname;
-  if (navigator.share) {
-    try { await navigator.share({ title: "Startup Helper", text: SHARE_TEXT, url }); return; }
-    catch (e) { if (e && e.name === "AbortError") return; }
-  }
   let ok = false;
   try { await navigator.clipboard.writeText(url); ok = true; } catch {}
   if (!ok) { try { const ta = document.createElement("textarea"); ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.append(ta); ta.select(); ok = document.execCommand("copy"); ta.remove(); } catch {} }
-  toast(ok ? "اتنسخ لينك Startup Helper. ابعته لأي حد عايز يجربه." : "انسخ اللينك ده: " + url);
+  toast(ok ? "اتنسخ اللينك. ابعته لأي حد عايز يجرب Startup Helper." : "انسخ اللينك ده: " + url);
+  if (ok) { const l = $("share").querySelector(".lbl"); l.textContent = "اتنسخ ✓"; setTimeout(() => (l.textContent = "شارك"), 2200); }
 });
 
 renderAll();
