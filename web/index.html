@@ -95,6 +95,7 @@ textarea#input::placeholder { color: #94A3B8; }
 .send:hover { background: var(--primary-700); }
 .send[disabled] { background: #CBD5E1; cursor: default; }
 .send.stop { background: var(--ink); }
+.send.stop svg { width: 16px; height: 16px; }
 .hint { margin: 8px 4px 0; font-size: 12px; color: var(--muted); text-align: center; }
 .stopbtn { display: flex; align-items: center; gap: 8px; margin: 0 auto 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 99px; padding: 8px 18px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 14px rgba(17,24,39,.08); }
 .stopbtn:hover { border-color: var(--danger); color: var(--danger); }
@@ -112,7 +113,7 @@ textarea#input::placeholder { color: #94A3B8; }
 .chip[disabled] { opacity: .5; cursor: default; }
 .unavailable { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.9; color: var(--muted); }
 
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 110px); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 110px); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; z-index: 70; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
 
 /* Saved chats: a drawer on phones and tablets, a fixed column at the right edge on wide screens. */
 .side { position: fixed; top: 0; bottom: 0; right: 0; z-index: 60; width: min(300px, 86vw); background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 14px) calc(env(safe-area-inset-right, 0px) + 14px) calc(env(safe-area-inset-bottom, 0px) + 14px) 14px; transform: translateX(100%); transition: transform .2s ease; }
@@ -138,6 +139,9 @@ textarea#input::placeholder { color: #94A3B8; }
 .item.confirm button { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 5px 12px; font-size: 13px; font-weight: 600; color: var(--ink); }
 .item.confirm button.yes { background: var(--danger); border-color: var(--danger); color: #fff; }
 .side-empty { font-size: 13px; color: var(--muted); line-height: 1.8; padding: 8px 4px; }
+.sideshare { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; color: var(--ink); border-radius: 10px; padding: 11px 10px; font-size: 14px; font-weight: 600; text-align: start; }
+.sideshare:hover { background: #F1F5F9; }
+.sideshare svg { color: var(--primary); flex-shrink: 0; }
 .side-note { font-size: 11.5px; color: var(--muted); line-height: 1.7; border-top: 1px solid var(--line); padding-top: 10px; margin: 0; }
 .scrim { position: fixed; inset: 0; z-index: 55; background: rgba(17,24,39,.35); }
 .iconbtn { width: 38px; height: 38px; flex-shrink: 0; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; display: grid; place-items: center; }
@@ -178,6 +182,53 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .side .item .open { padding-block: 11px; }
 }
 
+/* Phones: the layout of a chat app. Menu, title and new chat on top; a big rounded message box with a round send
+   button at the bottom; light user bubbles; compact options in the middle of an empty chat. */
+@media (max-width: 560px) {
+  body { background: var(--card); }
+  body::before { background: var(--card); }
+  header.top { background: rgba(255,255,255,.96); border-bottom-color: transparent; }
+  header.top .col { display: grid; grid-template-columns: 40px 1fr 40px; height: 54px; gap: 8px; }
+  .brand-wrap, .head-actions { display: contents; }
+  #openSide, #newChat { width: 40px; height: 40px; padding: 0; border: 0; background: transparent; border-radius: 12px; display: grid; place-items: center; }
+  #openSide:active, #newChat:active { background: #F1F5F9; }
+  #newChat svg { width: 20px; height: 20px; }
+  #newChat[hidden] { display: grid !important; visibility: hidden; }
+  #share { display: none; }
+  .brand { justify-content: center; }
+  .brand .logo { display: none; }
+  .brand b { font-size: 16px; }
+
+  footer.composer { background: var(--card); }
+  footer.composer::before { background: linear-gradient(to top, var(--card), rgba(255,255,255,0)); }
+  .box { flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 10px 8px 10px; border-radius: 24px; background: #F4F5F7; border-color: transparent; box-shadow: none; }
+  .box:focus-within { border-color: #D7DCE3; box-shadow: none; background: #F4F5F7; }
+  textarea#input { padding: 4px 6px; flex: none; width: 100%; }
+  .send { align-self: flex-end; width: 36px; height: 36px; border-radius: 50%; }
+  .send svg { width: 18px; height: 18px; }
+  .send[disabled] { background: #D5DAE1; }
+  .chips { padding-bottom: 8px; }
+  .chip { background: #F4F5F7; border-color: transparent; }
+  .stopbtn { box-shadow: none; background: #F4F5F7; border-color: transparent; }
+
+  .msg.user .bubble { background: #EEF1F5; color: var(--ink); border-radius: 20px; padding: 9px 14px; }
+  .msg.ai .bubble { padding-inline: 0; }
+  .pcard { border-radius: 18px; }
+
+  .empty { min-height: calc(100dvh - 54px - 150px); justify-content: center; padding-top: 0; gap: 22px; }
+  .empty h1 { text-align: center; font-size: 1.45rem; }
+  .empty p { display: none; }
+  .starters { gap: 8px; }
+  .starter { flex-direction: row; align-items: center; gap: 10px; padding: 12px; min-height: 0; border-radius: 16px; background: #F7F8FA; border-color: transparent; }
+  .starter:hover { transform: none; box-shadow: none; }
+  .starter .ico { width: 34px; height: 34px; border-radius: 10px; margin: 0; background: var(--card); }
+  .starter .ico svg { width: 18px; height: 18px; }
+  .starter strong { font-size: 14.5px; }
+  .starter span { display: none; }
+  .starter[aria-pressed="true"] { background: var(--primary-50); border-color: var(--primary); box-shadow: none; }
+  .picked { padding-bottom: 8px; }
+}
+
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 
@@ -193,6 +244,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
     محادثة جديدة
   </button>
   <nav class="chats" id="chats"></nav>
+  <button class="sideshare" id="sideShare" type="button">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+    <span>انسخ لينك Startup Helper</span>
+  </button>
   <p class="side-note">المحادثات محفوظة على الجهاز والمتصفح ده بس.</p>
 </aside>
 <div class="scrim" id="scrim" hidden></div>
@@ -252,7 +307,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
       <form class="box" id="form">
         <textarea id="input" rows="1" aria-label="رسالتك" placeholder="اكتب عن الـ Startup بتاعك وعايز إيه…"></textarea>
         <button class="send" id="send" type="submit" aria-label="ابعت" disabled>
-          <svg id="icoSend" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          <svg id="icoSend" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           <svg id="icoStop" hidden width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
         </button>
       </form>
@@ -677,7 +732,14 @@ const FOLLOW_UP = {
 };
 $("starters").addEventListener("click", (e) => {
   const b = e.target.closest(".chip"); if (!b || busy) return;
-  if (state.turns.length) { sendMessage(FOLLOW_UP[b.dataset.kind]); return; }
+  if (state.turns.length) {
+    // Mid-chat: put the request in the box so they can add to it or decide not to send it.
+    const ask = FOLLOW_UP[b.dataset.kind];
+    input.value = input.value.trim() ? input.value.trimEnd() + "\n" + ask + " " : ask + " ";
+    store.draft = input.value; save(); autosize(); input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    return;
+  }
   setKind(b.dataset.kind); input.focus();
 });
 $("bigStarters").addEventListener("click", (e) => {
@@ -689,14 +751,16 @@ $("newChat").addEventListener("click", startNewChat);
 
 /* Share the tool itself (never the person's chat): copies the short link. */
 const SHARE_URL = "https://bit.ly/marketingbriefath"; // the link people get when they share; null = this page's own address
-$("share").addEventListener("click", async () => {
+async function copyShareLink(labelEl, idle) {
   const url = SHARE_URL || location.origin + location.pathname;
   let ok = false;
   try { await navigator.clipboard.writeText(url); ok = true; } catch {}
   if (!ok) { try { const ta = document.createElement("textarea"); ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.append(ta); ta.select(); ok = document.execCommand("copy"); ta.remove(); } catch {} }
   toast(ok ? "اتنسخ اللينك. ابعته لأي حد عايز يجرب Startup Helper." : "انسخ اللينك ده: " + url);
-  if (ok) { const l = $("share").querySelector(".lbl"); l.textContent = "اتنسخ ✓"; setTimeout(() => (l.textContent = "شارك"), 2200); }
-});
+  if (ok && labelEl) { labelEl.textContent = "اتنسخ ✓"; setTimeout(() => (labelEl.textContent = idle), 2200); }
+}
+$("share").addEventListener("click", () => copyShareLink($("share").querySelector(".lbl"), "شارك"));
+$("sideShare").addEventListener("click", () => copyShareLink($("sideShare").querySelector("span"), "انسخ لينك Startup Helper"));
 
 renderAll();
 if (state.turns.length) scrollDown(true);
