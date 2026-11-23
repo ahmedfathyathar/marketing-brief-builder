@@ -358,10 +358,16 @@ async function askAI(turns, { onText, signal }) {
 async function askServer(turns, { onText, signal }) {
   let text = "";
   let res;
+  // Some networks block the server's address and the request then hangs; give up after 30 seconds instead of waiting forever.
+  const conn = new AbortController();
+  const giveUp = setTimeout(() => conn.abort(), 30000);
+  signal.addEventListener("abort", () => conn.abort());
   try {
-    res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: turns }), signal });
+    res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: turns }), signal: conn.signal });
   } catch (e) {
-    throw { code: signal.aborted ? "cancelled" : "network" };
+    throw { code: signal.aborted ? "cancelled" : "unreachable" };
+  } finally {
+    clearTimeout(giveUp);
   }
   if (!res.ok || !res.body) {
     let code = "upstream_error";
@@ -600,6 +606,7 @@ const ERR = {
   rate_limited: "فيه ضغط كبير دلوقتي. استنى دقيقة وجرب تاني.",
   busy: "الـ AI عليه ضغط دلوقتي. جرب تاني بعد شوية.",
   network: "النت فصل أو السيرفر مش بيرد. اتأكد من النت وابعت رسالتك تاني.",
+  unreachable: "مش قادر أوصل للسيرفر. ساعات نت الشركات أو بعض شبكات الواي فاي بتقفله، جرب من نت الموبايل أو شبكة تانية وابعت رسالتك تاني.",
   not_configured: "الخدمة لسه بتتجهز. جرب تاني بعد شوية.",
   forbidden: "الصفحة دي مش مسموح لها تكلم السيرفر.",
   bad_request: "المحادثة طولت جدا. ابدأ محادثة جديدة.",
