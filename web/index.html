@@ -96,6 +96,9 @@ textarea#input::placeholder { color: #94A3B8; }
 .send[disabled] { background: #CBD5E1; cursor: default; }
 .send.stop { background: var(--ink); }
 .hint { margin: 8px 4px 0; font-size: 12px; color: var(--muted); text-align: center; }
+.stopbtn { display: flex; align-items: center; gap: 8px; margin: 0 auto 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 99px; padding: 8px 18px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 14px rgba(17,24,39,.08); }
+.stopbtn:hover { border-color: var(--danger); color: var(--danger); }
+.stopbtn i { width: 10px; height: 10px; border-radius: 2px; background: currentColor; }
 .picked { display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; font-size: 13px; color: var(--muted); }
 .picked b { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-50); color: var(--primary-700); border: 1px solid #C7D7FE; border-radius: 99px; padding: 5px 6px 5px 12px; font-size: 13.5px; }
 .picked b button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--primary-700); display: grid; place-items: center; padding: 0; }
@@ -244,6 +247,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
         <button class="chip" type="button" data-kind="landing">Landing Page</button>
         <button class="chip" type="button" data-kind="copy">Sales Copy</button>
       </div>
+      <button class="stopbtn" id="stopBtn" type="button" hidden><i aria-hidden="true"></i>وقف الرد</button>
       <div class="picked" id="picked" hidden>إنت اخترت <b><span id="pickedName"></span><button type="button" id="unpick" aria-label="شيل الاختيار"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></b></div>
       <form class="box" id="form">
         <textarea id="input" rows="1" aria-label="رسالتك" placeholder="اكتب عن الـ Startup بتاعك وعايز إيه…"></textarea>
@@ -553,8 +557,10 @@ function setBusy(b) {
   busy = b;
   document.querySelectorAll(".chip").forEach((c) => (c.disabled = b));
   send.classList.toggle("stop", b);
-  $("icoSend").hidden = b; $("icoStop").hidden = !b;
-  send.setAttribute("aria-label", b ? "وقف" : "ابعت");
+  $("icoSend").toggleAttribute("hidden", b); $("icoStop").toggleAttribute("hidden", !b); // SVG elements have no .hidden property
+  send.setAttribute("aria-label", b ? "وقف الرد" : "ابعت");
+  $("stopBtn").hidden = !b;
+  $("starters").hidden = b || !state.turns.length; // while a reply is coming, the stop button takes the chips' place
   updateSend();
 }
 function updateSend() { send.disabled = !busy && !input.value.trim(); }
@@ -574,6 +580,7 @@ async function sendMessage(text) {
   text = text.trim();
   if (!text || busy) return;
   const chat = state;
+  const typed = text, kindUsed = !chat.turns.length ? pickedKind : null;
   if (pickedKind && !chat.turns.length) text = INTENT[pickedKind] + "\n" + text;
   chat.turns.push({ role: "user", content: text });
   if (!store.chats.includes(chat)) { chat.title = titleOf(chat); store.chats.unshift(chat); }
@@ -586,6 +593,7 @@ async function sendMessage(text) {
   scrollDown(true);
   setBusy(true);
   ctl = new AbortController();
+  const myCtl = ctl;
   let shown = "";
   try {
     const { text: reply, truncated } = await askAI(trimmedTurns(chat), {
@@ -596,8 +604,19 @@ async function sendMessage(text) {
   } catch (e) {
     const code = e && e.code;
     const partial = (e && e.text) || shown;
-    if (code === "cancelled") {
+    if (code === "cancelled" || myCtl.signal.aborted) {
       if (partial) chat.turns.push({ role: "assistant", content: partial, note: "وقفت الرد." });
+      else {
+        // Stopped before any reply: treat the message as sent by mistake and give it back to edit.
+        if (chat.turns[chat.turns.length - 1]?.role === "user") chat.turns.pop();
+        if (!chat.turns.length) store.chats = store.chats.filter((c) => c !== chat);
+        if (chat === state) {
+          input.value = typed; store.draft = typed;
+          if (kindUsed) setKind(kindUsed);
+          autosize();
+          toast("وقفت الرسالة. عدلها وابعتها تاني.");
+        }
+      }
     } else {
       if (partial && code !== "refused") chat.turns.push({ role: "assistant", content: partial, note: "الرد اتقطع. ابعت رسالتك تاني." });
       else chat.turns.push({ role: "assistant", content: "", note: ERR[code] || "حصلت مشكلة في الاتصال. ابعت رسالتك تاني." });
@@ -647,6 +666,7 @@ function setKind(kind) {
   document.querySelectorAll("#bigStarters .starter").forEach((s) => s.setAttribute("aria-pressed", String(s.dataset.kind === pickedKind)));
   autosize();
 }
+$("stopBtn").addEventListener("click", () => ctl?.abort());
 $("unpick").addEventListener("click", () => { setKind(null); input.focus(); });
 form.addEventListener("submit", (e) => { e.preventDefault(); if (busy) { ctl?.abort(); return; } sendMessage(input.value); });
 const FOLLOW_UP = {
